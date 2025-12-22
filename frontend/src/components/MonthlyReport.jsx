@@ -13,6 +13,7 @@ import '../styles/components.css'
 const MonthlyReport = () => {
   const navigate = useNavigate()
   const [report, setReport] = useState(null)
+  const [spheres, setSpheres] = useState([])
   const [loading, setLoading] = useState(true)
   const isDark = useTheme()
 
@@ -20,11 +21,21 @@ const MonthlyReport = () => {
     initTelegramWebApp()
     setBackButton(() => navigate('/progress'))
     loadReport()
+    loadSpheres()
     
     return () => {
       hideBackButton()
     }
   }, [navigate])
+
+  const loadSpheres = async () => {
+    try {
+      const data = await api.getAllSpheres()
+      setSpheres(data)
+    } catch (error) {
+      console.error('Ошибка загрузки сфер:', error)
+    }
+  }
 
   const loadReport = async () => {
     try {
@@ -37,6 +48,11 @@ const MonthlyReport = () => {
     }
   }
 
+  const getSphereName = (sphereKey) => {
+    const sphere = spheres.find(s => s.key === sphereKey)
+    return sphere ? sphere.name : (SPHERES[sphereKey] || sphereKey)
+  }
+
   if (loading) {
     return (
       <div className="container">
@@ -47,7 +63,7 @@ const MonthlyReport = () => {
     )
   }
 
-  const chartData = report ? prepareSpiderChartData(report.current_ratings) : null
+  const chartData = report ? prepareSpiderChartData(report.current_ratings, spheres.length > 0 ? spheres : null) : null
 
   return (
     <div className="container">
@@ -63,7 +79,7 @@ const MonthlyReport = () => {
             )}
             
             <div style={{ marginBottom: '24px' }}>
-              <h3>Активные сферы: {report.focus_spheres.map(s => SPHERES[s] || s).join(' и ')}</h3>
+              <h3>Активные сферы: {report.focus_spheres.map(s => getSphereName(s)).join(' и ')}</h3>
             </div>
             
             {report.progress.grown_spheres.length > 0 && (
@@ -72,7 +88,7 @@ const MonthlyReport = () => {
                 {report.progress.grown_spheres.map(item => (
                   <div key={item.sphere} className="progress-item">
                     <div className="progress-item-label">
-                      <span>{SPHERES[item.sphere] || item.sphere}</span>
+                      <span>{getSphereName(item.sphere)}</span>
                     </div>
                     <div className="progress-slider">
                       <div 
@@ -91,7 +107,7 @@ const MonthlyReport = () => {
                 {report.progress.declined_spheres.map(item => (
                   <div key={item.sphere} className="progress-item">
                     <div className="progress-item-label">
-                      <span>{SPHERES[item.sphere] || item.sphere}</span>
+                      <span>{getSphereName(item.sphere)}</span>
                     </div>
                     <div className="progress-slider">
                       <div 

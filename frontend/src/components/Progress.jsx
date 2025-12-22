@@ -12,6 +12,7 @@ import '../styles/components.css'
 const Progress = () => {
   const navigate = useNavigate()
   const [progress, setProgress] = useState(null)
+  const [spheres, setSpheres] = useState([])
   const [loading, setLoading] = useState(true)
   const isDark = useTheme()
 
@@ -19,11 +20,21 @@ const Progress = () => {
     initTelegramWebApp()
     setBackButton(() => navigate('/menu'))
     loadProgress()
+    loadSpheres()
     
     return () => {
       hideBackButton()
     }
   }, [navigate])
+
+  const loadSpheres = async () => {
+    try {
+      const data = await api.getAllSpheres()
+      setSpheres(data)
+    } catch (error) {
+      console.error('Ошибка загрузки сфер:', error)
+    }
+  }
 
   const loadProgress = async () => {
     try {
@@ -46,7 +57,7 @@ const Progress = () => {
     )
   }
 
-  const chartData = progress ? prepareSpiderChartData(progress.current_ratings) : null
+  const chartData = progress ? prepareSpiderChartData(progress.current_ratings, spheres.length > 0 ? spheres : null) : null
 
   return (
     <div className="container">

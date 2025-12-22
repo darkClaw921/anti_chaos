@@ -10,16 +10,33 @@ import '../styles/components.css'
 const SphereRating = () => {
   const navigate = useNavigate()
   const [ratings, setRatings] = useState({})
+  const [spheres, setSpheres] = useState([])
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     initTelegramWebApp()
     setBackButton(() => navigate('/format'))
+    loadSpheres()
     
     return () => {
       hideBackButton()
     }
   }, [navigate])
+
+  const loadSpheres = async () => {
+    try {
+      const data = await api.getAllSpheres()
+      setSpheres(data)
+    } catch (error) {
+      console.error('Ошибка загрузки сфер:', error)
+      // Используем константы как fallback
+      const fallbackSpheres = SPHERE_KEYS.map(key => ({
+        key,
+        name: SPHERES[key]
+      }))
+      setSpheres(fallbackSpheres)
+    }
+  }
 
   const handleRatingClick = (sphere, rating) => {
     setRatings(prev => ({
@@ -30,7 +47,8 @@ const SphereRating = () => {
 
   const handleContinue = async () => {
     // Проверяем, что все сферы оценены
-    const allRated = SPHERE_KEYS.every(sphere => ratings[sphere] !== undefined)
+    const sphereKeys = spheres.length > 0 ? spheres.map(s => s.key) : SPHERE_KEYS
+    const allRated = sphereKeys.every(sphere => ratings[sphere] !== undefined)
     
     if (!allRated) {
       alert('Пожалуйста, оцените все сферы')
@@ -59,24 +77,28 @@ const SphereRating = () => {
         <h2 className="text-title">Оцени сферы по шкале от 1 до 10</h2>
         
         <div style={{ marginTop: '64px' }}>
-          {SPHERE_KEYS.map(sphere => (
-            <div key={sphere} style={{ marginBottom: '20px' }}>
-              <div style={{ marginBottom: '12px', fontSize: '16px' }}>
-                {SPHERES[sphere]}
+          {(spheres.length > 0 ? spheres : SPHERE_KEYS.map(key => ({ key, name: SPHERES[key] }))).map(sphere => {
+            const sphereKey = typeof sphere === 'string' ? sphere : sphere.key
+            const sphereName = typeof sphere === 'string' ? SPHERES[sphere] : sphere.name
+            return (
+              <div key={sphereKey} style={{ marginBottom: '20px' }}>
+                <div style={{ marginBottom: '12px', fontSize: '16px' }}>
+                  {sphereName}
+                </div>
+                <div className="rating-group">
+                  {RATING_SCALE.map(rating => (
+                    <button
+                      key={rating}
+                      className={`rating-button ${ratings[sphereKey] === rating ? 'active' : ''}`}
+                      onClick={() => handleRatingClick(sphereKey, rating)}
+                    >
+                      {rating}
+                    </button>
+                  ))}
+                </div>
               </div>
-              <div className="rating-group">
-                {RATING_SCALE.map(rating => (
-                  <button
-                    key={rating}
-                    className={`rating-button ${ratings[sphere] === rating ? 'active' : ''}`}
-                    onClick={() => handleRatingClick(sphere, rating)}
-                  >
-                    {rating}
-                  </button>
-                ))}
-              </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       </div>
       

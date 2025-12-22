@@ -13,14 +13,25 @@ import '../styles/components.css'
 const SpiderChart = () => {
   const navigate = useNavigate()
   const [ratings, setRatings] = useState({})
+  const [spheres, setSpheres] = useState([])
   const [loading, setLoading] = useState(true)
   const isDark = useTheme()
 
   useEffect(() => {
     initTelegramWebApp()
     hideBackButton()
+    loadSpheres()
     loadRatings()
   }, [])
+
+  const loadSpheres = async () => {
+    try {
+      const data = await api.getAllSpheres()
+      setSpheres(data)
+    } catch (error) {
+      console.error('Ошибка загрузки сфер:', error)
+    }
+  }
 
   const loadRatings = async (retryCount = 0) => {
     try {
@@ -36,8 +47,24 @@ const SpiderChart = () => {
       
       console.log('Ratings map:', ratingsMap)
       
+      // Загружаем сферы, если еще не загружены
+      let sphereKeys = SPHERE_KEYS
+      if (spheres.length === 0) {
+        try {
+          const spheresData = await api.getAllSpheres()
+          if (spheresData && spheresData.length > 0) {
+            setSpheres(spheresData)
+            sphereKeys = spheresData.map(s => s.key)
+          }
+        } catch (e) {
+          console.error('Ошибка загрузки сфер:', e)
+        }
+      } else {
+        sphereKeys = spheres.map(s => s.key)
+      }
+      
       // Проверяем, что есть оценки для всех сфер
-      const allSpheresRated = SPHERE_KEYS.every(sphere => ratingsMap[sphere] !== undefined)
+      const allSpheresRated = sphereKeys.every(sphere => ratingsMap[sphere] !== undefined)
       
       // Если данных нет или не все сферы оценены, пробуем еще раз (максимум 3 попытки)
       if ((!data || data.length === 0 || !allSpheresRated) && retryCount < 3) {
@@ -80,7 +107,7 @@ const SpiderChart = () => {
   // Проверяем, есть ли данные для отображения
   const hasData = Object.keys(ratings).length > 0 && Object.values(ratings).some(r => r > 0)
 
-  const chartData = prepareSpiderChartData(ratings)
+  const chartData = prepareSpiderChartData(ratings, spheres.length > 0 ? spheres : null)
   const chartOptions = getSpiderChartOptions(isDark)
 
   return (

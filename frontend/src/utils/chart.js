@@ -4,11 +4,18 @@
 
 import { SPHERES, SPHERE_KEYS, SPHERE_COLORS } from './constants'
 
-export const prepareSpiderChartData = (ratings) => {
-  const labels = SPHERE_KEYS.map(key => SPHERES[key])
-  const data = SPHERE_KEYS.map(key => {
+export const prepareSpiderChartData = (ratings, spheres = null) => {
+  // Если передан список сфер из API, используем его, иначе используем константы
+  const sphereKeys = spheres ? spheres.map(s => s.key) : SPHERE_KEYS
+  const sphereNames = spheres ? spheres.reduce((acc, s) => {
+    acc[s.key] = s.name
+    return acc
+  }, {}) : SPHERES
+  
+  const labels = sphereKeys.map(key => sphereNames[key] || key)
+  const data = sphereKeys.map(key => {
     const value = ratings[key]
-    console.log(`Сфера ${key} (${SPHERES[key]}): rating = ${value}`)
+    console.log(`Сфера ${key} (${sphereNames[key] || key}): rating = ${value}`)
     return value !== undefined && value !== null ? value : 0
   })
   

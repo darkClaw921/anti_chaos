@@ -10,17 +10,28 @@ import '../styles/components.css'
 const WeeklySummary = () => {
   const navigate = useNavigate()
   const [summary, setSummary] = useState(null)
+  const [spheres, setSpheres] = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     initTelegramWebApp()
     setBackButton(() => navigate('/progress'))
     loadSummary()
+    loadSpheres()
     
     return () => {
       hideBackButton()
     }
   }, [navigate])
+
+  const loadSpheres = async () => {
+    try {
+      const data = await api.getAllSpheres()
+      setSpheres(data)
+    } catch (error) {
+      console.error('Ошибка загрузки сфер:', error)
+    }
+  }
 
   const loadSummary = async () => {
     try {
@@ -31,6 +42,11 @@ const WeeklySummary = () => {
     } finally {
       setLoading(false)
     }
+  }
+
+  const getSphereName = (sphereKey) => {
+    const sphere = spheres.find(s => s.key === sphereKey)
+    return sphere ? sphere.name : (SPHERES[sphereKey] || sphereKey)
   }
 
   if (loading) {
@@ -62,7 +78,7 @@ const WeeklySummary = () => {
                     textAlign: 'center',
                     minWidth: '120px'
                   }}>
-                    {SPHERES[sphere] || sphere}
+                    {getSphereName(sphere)}
                   </div>
                 ))}
               </div>
