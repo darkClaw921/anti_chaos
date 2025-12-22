@@ -47,7 +47,7 @@ const DailyQuestion = () => {
       if (savedCurrentSphereIndex !== null) {
         setCurrentSphereIndex(parseInt(savedCurrentSphereIndex, 10))
       } else {
-        setCurrentSphereIndex(0)
+      setCurrentSphereIndex(0)
       }
     } catch (error) {
       console.error('Ошибка загрузки фокус-сфер:', error)

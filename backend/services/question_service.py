@@ -73,13 +73,13 @@ async def get_daily_question_for_user(db: AsyncSession, user_id: int, current_sp
         
         # Если вопросов из текущей сферы нет, пробуем вторую сферу (если это была первая)
         if target_sphere_index == 0 and len(focus_spheres) >= 2:
-            question = await crud.get_random_question_by_sphere(
-                db, 
-                focus_spheres[1].sphere, 
-                user_id
-            )
-            if question:
-                return question
+        question = await crud.get_random_question_by_sphere(
+            db, 
+            focus_spheres[1].sphere, 
+            user_id
+        )
+        if question:
+            return question
     
     # Fallback: если нет вопросов для фокус-сфер,
     # используем простой вопрос из любой сферы

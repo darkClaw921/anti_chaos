@@ -125,20 +125,23 @@ export const getSpiderChartOptions = (isDarkTheme = false, showLegend = false) =
         position: 'bottom',
         labels: {
           usePointStyle: false,
-          padding: 15,
+          padding: 20,
           font: {
             size: 14
           },
           color: textColor,
-          generateLabels: (chart) => {
+          boxWidth: 0,
+          boxHeight: 0,
+          generateLabels: function(chart) {
             const datasets = chart.data.datasets
             return datasets.map((dataset, i) => ({
               text: dataset.label,
-              fillStyle: dataset.borderColor,
+              fillStyle: 'transparent',
               strokeStyle: dataset.borderColor,
               lineWidth: 2,
               hidden: false,
-              index: i
+              index: i,
+              fontColor: textColor
             }))
           }
         }
