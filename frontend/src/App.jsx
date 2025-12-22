@@ -1,12 +1,12 @@
 import React from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import Layout from './components/Layout'
 import WelcomeScreen from './components/WelcomeScreen'
 import FormatExplanation from './components/FormatExplanation'
 import SphereRating from './components/SphereRating'
 import SphereSelection from './components/SphereSelection'
 import SpiderChart from './components/SpiderChart'
 import DailyQuestion from './components/DailyQuestion'
-import AnswerForm from './components/AnswerForm'
 import Confirmation from './components/Confirmation'
 import MiniReward from './components/MiniReward'
 import DailySummary from './components/DailySummary'
@@ -25,26 +25,27 @@ function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<WelcomeScreen />} />
-        <Route path="/format" element={<FormatExplanation />} />
-        <Route path="/rating" element={<SphereRating />} />
-        <Route path="/selection" element={<SphereSelection />} />
-        <Route path="/chart" element={<SpiderChart />} />
-        <Route path="/daily" element={<DailyQuestion />} />
-        <Route path="/answer/:questionId" element={<AnswerForm />} />
-        <Route path="/confirmation" element={<Confirmation />} />
-        <Route path="/reward" element={<MiniReward />} />
-        <Route path="/summary" element={<DailySummary />} />
-        <Route path="/progress" element={<Progress />} />
-        <Route path="/weekly" element={<WeeklySummary />} />
-        <Route path="/monthly" element={<MonthlyReport />} />
-        <Route path="/menu" element={<Menu />} />
-        <Route path="/account" element={<Account />} />
-        <Route path="/settings" element={<Settings />} />
-        <Route path="/change-spheres" element={<ChangeFocusSpheres />} />
-        <Route path="/return" element={<ReturnAfterPause />} />
-        <Route path="/simple" element={<SimpleQuestion />} />
-        <Route path="/questions-database" element={<QuestionDatabase />} />
+        <Route path="/" element={<Layout />}>
+          <Route index element={<WelcomeScreen />} />
+          <Route path="format" element={<FormatExplanation />} />
+          <Route path="rating" element={<SphereRating />} />
+          <Route path="selection" element={<SphereSelection />} />
+          <Route path="chart" element={<SpiderChart />} />
+          <Route path="daily" element={<DailyQuestion />} />
+          <Route path="confirmation" element={<Confirmation />} />
+          <Route path="reward" element={<MiniReward />} />
+          <Route path="summary" element={<DailySummary />} />
+          <Route path="progress" element={<Progress />} />
+          <Route path="weekly" element={<WeeklySummary />} />
+          <Route path="monthly" element={<MonthlyReport />} />
+          <Route path="menu" element={<Menu />} />
+          <Route path="account" element={<Account />} />
+          <Route path="settings" element={<Settings />} />
+          <Route path="change-spheres" element={<ChangeFocusSpheres />} />
+          <Route path="return" element={<ReturnAfterPause />} />
+          <Route path="simple" element={<SimpleQuestion />} />
+          <Route path="questions-database" element={<QuestionDatabase />} />
+        </Route>
       </Routes>
     </Router>
   )

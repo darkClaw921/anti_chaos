@@ -271,3 +271,46 @@
   transform: translateX(22px);
 }
 
+/* Кнопка меню-сэндвич */
+.menu-button {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(255, 255, 255, 0.9);
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
+  cursor: pointer;
+  z-index: 1000;
+  transition: all 0.2s;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.menu-button:hover {
+  background-color: #ffffff;
+  border-color: #1890ff;
+  box-shadow: 0 2px 8px rgba(24, 144, 255, 0.2);
+}
+
+.menu-button svg {
+  color: rgba(0, 0, 0, 0.85);
+}
+
+.dark-theme .menu-button {
+  background-color: rgba(31, 31, 31, 0.9);
+  border-color: #434343;
+}
+
+.dark-theme .menu-button:hover {
+  background-color: #1f1f1f;
+  border-color: #1890ff;
+}
+
+.dark-theme .menu-button svg {
+  color: rgba(255, 255, 255, 0.85);
+}
+

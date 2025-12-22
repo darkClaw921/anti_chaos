@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional, List
 from backend.database.database import get_db
 from backend.database import crud
-from backend.services.question_service import get_daily_question_for_user, get_simple_question_for_user
+from backend.services.question_service import get_daily_question_for_user, get_simple_question_for_user, get_spheres_for_rating_after_questions
 from backend.api.users import get_current_user, get_admin_user
 from pydantic import BaseModel
 
@@ -129,4 +129,17 @@ async def delete_question_admin(
     if not success:
         raise HTTPException(status_code=404, detail="Question not found")
     return {"message": "Question deleted successfully"}
+
+
+@router.get("/spheres-for-rating", response_model=List[str])
+async def get_spheres_for_rating(
+    user = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Заглушка: получает список сфер (1 или 2) для оценки после окончания вопросов.
+    Возвращает сферы, которые пользователь проходил за период.
+    """
+    spheres = await get_spheres_for_rating_after_questions(db, user.id)
+    return spheres
 

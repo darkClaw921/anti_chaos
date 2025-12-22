@@ -61,9 +61,6 @@ const Progress = () => {
       </div>
       
       <div className="btn-group" style={{ marginTop: 'auto' }}>
-        <Button onClick={() => navigate('/weekly')} type="primary">
-          Итоги недели
-        </Button>
         <Button onClick={() => navigate('/monthly')} type="secondary">
           Месячный отчёт
         </Button>

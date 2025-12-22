@@ -77,3 +77,17 @@ async def get_focus_spheres(
     spheres = await crud.get_user_focus_spheres(db, user.id)
     return [{'id': s.id, 'sphere': s.sphere} for s in spheres]
 
+
+@router.get("/for-rating-after-questions")
+async def get_spheres_for_rating_after_questions_endpoint(
+    user = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Заглушка: получает список сфер (1 или 2) для оценки после окончания вопросов.
+    Возвращает сферы, которые пользователь проходил за период.
+    """
+    from backend.services.question_service import get_spheres_for_rating_after_questions
+    spheres = await get_spheres_for_rating_after_questions(db, user.id)
+    return {'spheres': spheres}
+

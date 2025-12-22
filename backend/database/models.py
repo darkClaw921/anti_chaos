@@ -100,3 +100,19 @@ class UserSettings(Base):
     
     user = relationship("User", back_populates="settings")
 
+
+class QuestionSchedule(Base):
+    """
+    Заглушка для модели расписания вопросов.
+    Позже будет заполнена списком вопросов для каждого дня.
+    """
+    __tablename__ = "question_schedule"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    day_number = Column(Integer, nullable=False)  # Номер дня (1, 2, 3, ...)
+    question_id = Column(Integer, ForeignKey("questions.id"), nullable=False)
+    sphere = Column(String, nullable=False)  # Сфера жизни
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    question = relationship("Question")
+

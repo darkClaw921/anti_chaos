@@ -13,15 +13,13 @@ const Account = () => {
   const [profile, setProfile] = useState({
     name: '',
     gender: '',
-    birth_date: '',
-    notification_time: ''
+    birth_date: ''
   })
 
   useEffect(() => {
     initTelegramWebApp()
     setBackButton(() => navigate('/menu'))
     loadUser()
-    loadSettings()
     
     return () => {
       hideBackButton()
@@ -35,8 +33,7 @@ const Account = () => {
       setProfile({
         name: data.name || '',
         gender: data.gender || '',
-        birth_date: data.birth_date ? formatDateForInput(data.birth_date) : '',
-        notification_time: ''
+        birth_date: data.birth_date ? formatDateForInput(data.birth_date) : ''
       })
     } catch (error) {
       console.error('Ошибка загрузки пользователя:', error)
@@ -45,17 +42,6 @@ const Account = () => {
     }
   }
 
-  const loadSettings = async () => {
-    try {
-      const data = await api.getSettings()
-      setProfile(prev => ({
-        ...prev,
-        notification_time: data.notification_time || ''
-      }))
-    } catch (error) {
-      console.error('Ошибка загрузки настроек:', error)
-    }
-  }
 
   const formatDateForInput = (dateString) => {
     // Преобразуем YYYY-MM-DD в формат для date input (YYYY-MM-DD)
@@ -79,14 +65,7 @@ const Account = () => {
         gender: profile.gender || null,
         birth_date: profile.birth_date || null
       })
-      // Сохраняем время уведомлений через API настроек
-      if (profile.notification_time !== undefined) {
-        await api.updateSettings({
-          notification_time: profile.notification_time || null
-        })
-      }
       await loadUser()
-      await loadSettings()
       alert('Профиль сохранен')
     } catch (error) {
       alert('Ошибка при сохранении профиля: ' + error.message)
@@ -190,16 +169,6 @@ const Account = () => {
               className="form-input" 
               value={profile.birth_date}
               onChange={(e) => setProfile({ ...profile, birth_date: e.target.value })}
-            />
-          </div>
-          
-          <div className="form-group">
-            <label className="form-label">Время уведомлений</label>
-            <input 
-              type="time"
-              className="form-input" 
-              value={profile.notification_time}
-              onChange={(e) => setProfile({ ...profile, notification_time: e.target.value })}
             />
           </div>
         </div>

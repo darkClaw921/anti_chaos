@@ -12,10 +12,6 @@ const DailySummary = () => {
     hideBackButton()
   }, [])
 
-  const handleViewProgress = () => {
-    navigate('/progress')
-  }
-
   const handleContinue = () => {
     navigate('/menu')
   }
@@ -24,15 +20,12 @@ const DailySummary = () => {
     <div className="container">
       <div className="content">
         <p style={{ whiteSpace: 'pre-wrap' }}>
-          На сегодня всё. Хочешь посмотреть свой прогресс?
+          На сегодня всё.
         </p>
       </div>
       
       <div className="btn-group" style={{ marginTop: 'auto' }}>
-        <Button onClick={handleViewProgress} type="primary">
-          Посмотреть прогресс
-        </Button>
-        <Button onClick={handleContinue} type="secondary">
+        <Button onClick={handleContinue} type="primary">
           Продолжить
         </Button>
       </div>

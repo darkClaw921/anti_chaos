@@ -79,6 +79,7 @@ p {
 /* Контейнеры */
 .container {
   padding: 36px 16px 60px;
+  padding-top: 64px; /* Добавляем отступ сверху для кнопки меню */
   min-height: 100vh;
   display: flex;
   flex-direction: column;

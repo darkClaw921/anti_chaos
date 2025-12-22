@@ -402,3 +402,29 @@ async def delete_user_account(db: AsyncSession, user_id: int) -> bool:
     await db.commit()
     return True
 
+
+# QuestionSchedule CRUD (заглушки)
+async def get_questions_from_schedule(db: AsyncSession, day_number: int, sphere: Optional[str] = None) -> List[Question]:
+    """
+    Заглушка: получает вопросы из расписания для указанного дня.
+    Позже будет реализована полная логика работы с расписанием.
+    """
+    # TODO: Реализовать получение вопросов из таблицы question_schedule
+    # Пока возвращаем пустой список
+    return []
+
+
+async def create_question_schedule_entry(
+    db: AsyncSession,
+    day_number: int,
+    question_id: int,
+    sphere: str
+):
+    """
+    Заглушка: создает запись в расписании вопросов.
+    Позже будет использоваться для заполнения расписания.
+    """
+    # TODO: Реализовать создание записи в таблице question_schedule
+    # Пока просто pass
+    pass
+
