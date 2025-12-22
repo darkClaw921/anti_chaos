@@ -19,39 +19,53 @@ const SphereSelection = () => {
     setBackButton(() => navigate('/rating'))
     
     // Загружаем оценки и сферы для отображения
-    loadRatings()
-    loadSpheres()
+    loadData()
     
     return () => {
       hideBackButton()
     }
   }, [navigate])
 
-  const loadSpheres = async () => {
+  const loadData = async () => {
     try {
-      const data = await api.getAllSpheres()
-      setSpheres(data)
+      const [spheresData, ratingsData] = await Promise.all([
+        api.getAllSpheres(),
+        api.getSphereRatings()
+      ])
+      
+      const ratingsMap = {}
+      ratingsData.forEach(item => {
+        ratingsMap[item.sphere] = item.rating
+      })
+      setRatings(ratingsMap)
+      
+      // Сортируем сферы по оценкам по возрастанию (сферы без оценок в конце)
+      const sortedSpheres = [...spheresData].sort((a, b) => {
+        const ratingA = ratingsMap[a.key] || 0
+        const ratingB = ratingsMap[b.key] || 0
+        
+        // Если обе сферы без оценок, сохраняем исходный порядок
+        if (ratingA === 0 && ratingB === 0) {
+          return 0
+        }
+        
+        // Сферы без оценок идут в конец
+        if (ratingA === 0) return 1
+        if (ratingB === 0) return -1
+        
+        // Сортируем по возрастанию оценок
+        return ratingA - ratingB
+      })
+      
+      setSpheres(sortedSpheres)
     } catch (error) {
-      console.error('Ошибка загрузки сфер:', error)
-      // Используем константы как fallback
+      console.error('Ошибка загрузки данных:', error)
+      // Используем константы как fallback для сфер
       const fallbackSpheres = SPHERE_KEYS.map(key => ({
         key,
         name: SPHERES[key]
       }))
       setSpheres(fallbackSpheres)
-    }
-  }
-
-  const loadRatings = async () => {
-    try {
-      const data = await api.getSphereRatings()
-      const ratingsMap = {}
-      data.forEach(item => {
-        ratingsMap[item.sphere] = item.rating
-      })
-      setRatings(ratingsMap)
-    } catch (error) {
-      console.error('Ошибка загрузки оценок:', error)
     }
   }
 
