@@ -278,6 +278,13 @@ export const api = {
     return handleResponse(response)
   },
   
+  getAllSpheres: async () => {
+    const response = await fetch(buildApiUrl('api/spheres/all'), {
+      headers: getHeaders()
+    })
+    return handleResponse(response)
+  },
+  
   // Progress
   getProgress: async (days = 7) => {
     const response = await fetch(buildApiUrl(`api/progress/?days=${days}`), {

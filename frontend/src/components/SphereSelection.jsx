@@ -11,19 +11,36 @@ const SphereSelection = () => {
   const navigate = useNavigate()
   const [selectedSpheres, setSelectedSpheres] = useState([])
   const [ratings, setRatings] = useState({})
+  const [spheres, setSpheres] = useState([])
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     initTelegramWebApp()
     setBackButton(() => navigate('/rating'))
     
-    // Загружаем оценки для отображения
+    // Загружаем оценки и сферы для отображения
     loadRatings()
+    loadSpheres()
     
     return () => {
       hideBackButton()
     }
   }, [navigate])
+
+  const loadSpheres = async () => {
+    try {
+      const data = await api.getAllSpheres()
+      setSpheres(data)
+    } catch (error) {
+      console.error('Ошибка загрузки сфер:', error)
+      // Используем константы как fallback
+      const fallbackSpheres = SPHERE_KEYS.map(key => ({
+        key,
+        name: SPHERES[key]
+      }))
+      setSpheres(fallbackSpheres)
+    }
+  }
 
   const loadRatings = async () => {
     try {
@@ -80,20 +97,20 @@ const SphereSelection = () => {
         </h2>
         
         <div className="sphere-grid" style={{ marginTop: '151px' }}>
-          {SPHERE_KEYS.map(sphere => {
-            const isSelected = selectedSpheres.includes(sphere)
-            const rating = ratings[sphere]
+          {spheres.map(sphere => {
+            const isSelected = selectedSpheres.includes(sphere.key)
+            const rating = ratings[sphere.key]
             
             return (
               <div
-                key={sphere}
+                key={sphere.key}
                 className={`sphere-card ${isSelected ? 'selected' : ''}`}
-                onClick={() => handleSphereClick(sphere)}
+                onClick={() => handleSphereClick(sphere.key)}
               >
                 {rating && (
                   <span className="sphere-rating">{rating}/10</span>
                 )}
-                <div className="sphere-name">{SPHERES[sphere]}</div>
+                <div className="sphere-name">{sphere.name}</div>
                 <div 
                   className={`checkbox ${isSelected ? 'checked' : ''}`}
                   style={{ marginTop: '8px' }}

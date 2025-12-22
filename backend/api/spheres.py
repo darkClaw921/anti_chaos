@@ -22,6 +22,18 @@ class FocusSpheresUpdate(BaseModel):
     spheres: List[str]
 
 
+class SphereResponse(BaseModel):
+    id: int
+    key: str
+    name: str
+    color: str
+    created_at: str
+    updated_at: str
+    
+    class Config:
+        from_attributes = True
+
+
 @router.post("/ratings")
 async def create_sphere_ratings(
     data: SphereRatingsCreate,
@@ -92,6 +104,22 @@ async def get_spheres_for_rating_after_questions_endpoint(
     return {'spheres': spheres}
 
 
+@router.get("/all", response_model=List[SphereResponse])
+async def get_all_spheres(
+    db: AsyncSession = Depends(get_db)
+):
+    """Получить все сферы (публичный endpoint для всех пользователей)"""
+    spheres = await crud.get_all_spheres(db)
+    return [{
+        'id': s.id,
+        'key': s.key,
+        'name': s.name,
+        'color': s.color,
+        'created_at': s.created_at.isoformat(),
+        'updated_at': s.updated_at.isoformat()
+    } for s in spheres]
+
+
 # Admin endpoints для управления сферами
 class SphereCreate(BaseModel):
     key: str
@@ -102,18 +130,6 @@ class SphereCreate(BaseModel):
 class SphereUpdate(BaseModel):
     name: Optional[str] = None
     color: Optional[str] = None
-
-
-class SphereResponse(BaseModel):
-    id: int
-    key: str
-    name: str
-    color: str
-    created_at: str
-    updated_at: str
-    
-    class Config:
-        from_attributes = True
 
 
 @router.get("/admin/all", response_model=List[SphereResponse])

@@ -9,6 +9,7 @@ import '../styles/main.css'
 const QuestionDatabase = () => {
   const navigate = useNavigate()
   const [questions, setQuestions] = useState([])
+  const [spheres, setSpheres] = useState([])
   const [loading, setLoading] = useState(true)
   const [selectedSphere, setSelectedSphere] = useState('all')
   const [showAddForm, setShowAddForm] = useState(false)
@@ -24,11 +25,27 @@ const QuestionDatabase = () => {
     initTelegramWebApp()
     setBackButton(() => navigate('/settings'))
     loadQuestions()
+    loadSpheres()
     
     return () => {
       hideBackButton()
     }
   }, [navigate])
+
+  const loadSpheres = async () => {
+    try {
+      const data = await api.getAllSpheres()
+      setSpheres(data)
+    } catch (error) {
+      console.error('Ошибка загрузки сфер:', error)
+      // Используем константы как fallback
+      const fallbackSpheres = SPHERE_KEYS.map(key => ({
+        key,
+        name: SPHERES[key]
+      }))
+      setSpheres(fallbackSpheres)
+    }
+  }
 
   const loadQuestions = async () => {
     try {
@@ -129,8 +146,8 @@ const QuestionDatabase = () => {
                 required
               >
                 <option value="">Выберите сферу</option>
-                {SPHERE_KEYS.map(key => (
-                  <option key={key} value={key}>{SPHERES[key]}</option>
+                {spheres.map(sphere => (
+                  <option key={sphere.key} value={sphere.key}>{sphere.name}</option>
                 ))}
               </select>
             </div>
@@ -200,8 +217,8 @@ const QuestionDatabase = () => {
               onChange={(e) => setSelectedSphere(e.target.value)}
             >
               <option value="all">Все сферы</option>
-              {SPHERE_KEYS.map(key => (
-                <option key={key} value={key}>{SPHERES[key]}</option>
+              {spheres.map(sphere => (
+                <option key={sphere.key} value={sphere.key}>{sphere.name}</option>
               ))}
             </select>
           </div>
@@ -231,7 +248,7 @@ const QuestionDatabase = () => {
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '8px' }}>
                     <div>
                       <strong style={{ color: '#1890ff' }}>
-                        {SPHERES[question.sphere] || question.sphere}
+                        {spheres.find(s => s.key === question.sphere)?.name || question.sphere}
                       </strong>
                       {question.is_active === false && (
                         <span style={{ marginLeft: '8px', color: '#999', fontSize: '12px' }}>

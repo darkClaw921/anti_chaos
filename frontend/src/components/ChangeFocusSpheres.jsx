@@ -11,6 +11,7 @@ const ChangeFocusSpheres = () => {
   const navigate = useNavigate()
   const [selectedSpheres, setSelectedSpheres] = useState([])
   const [ratings, setRatings] = useState({})
+  const [spheres, setSpheres] = useState([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
 
@@ -26,9 +27,10 @@ const ChangeFocusSpheres = () => {
 
   const loadData = async () => {
     try {
-      const [focusData, ratingsData] = await Promise.all([
+      const [focusData, ratingsData, spheresData] = await Promise.all([
         api.getFocusSpheres(),
-        api.getSphereRatings()
+        api.getSphereRatings(),
+        api.getAllSpheres()
       ])
       
       setSelectedSpheres(focusData.map(s => s.sphere))
@@ -38,8 +40,16 @@ const ChangeFocusSpheres = () => {
         ratingsMap[item.sphere] = item.rating
       })
       setRatings(ratingsMap)
+      
+      setSpheres(spheresData)
     } catch (error) {
       console.error('Ошибка загрузки данных:', error)
+      // Используем константы как fallback для сфер
+      const fallbackSpheres = SPHERE_KEYS.map(key => ({
+        key,
+        name: SPHERES[key]
+      }))
+      setSpheres(fallbackSpheres)
     } finally {
       setLoading(false)
     }
@@ -91,20 +101,20 @@ const ChangeFocusSpheres = () => {
         <h2 className="text-title">Изменение фокус-сфер</h2>
         
         <div className="sphere-grid" style={{ marginTop: '36px' }}>
-          {SPHERE_KEYS.map(sphere => {
-            const isSelected = selectedSpheres.includes(sphere)
-            const rating = ratings[sphere]
+          {spheres.map(sphere => {
+            const isSelected = selectedSpheres.includes(sphere.key)
+            const rating = ratings[sphere.key]
             
             return (
               <div
-                key={sphere}
+                key={sphere.key}
                 className={`sphere-card ${isSelected ? 'selected' : ''}`}
-                onClick={() => handleSphereClick(sphere)}
+                onClick={() => handleSphereClick(sphere.key)}
               >
                 {rating && (
                   <span className="sphere-rating">{rating}/10</span>
                 )}
-                <div className="sphere-name">{SPHERES[sphere]}</div>
+                <div className="sphere-name">{sphere.name}</div>
                 <div 
                   className={`checkbox ${isSelected ? 'checked' : ''}`}
                   style={{ marginTop: '8px' }}
