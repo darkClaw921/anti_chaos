@@ -147,6 +147,14 @@
   transition: width 0.3s;
 }
 
+.progress-slider-fill-green {
+  background-color: #52c41a;
+}
+
+.progress-slider-fill-red {
+  background-color: #ff4d4f;
+}
+
 .progress-item {
   margin-bottom: 24px;
 }

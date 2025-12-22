@@ -37,7 +37,54 @@ export const prepareSpiderChartData = (ratings, spheres = null) => {
   }
 }
 
-export const getSpiderChartOptions = (isDarkTheme = false) => {
+export const prepareSpiderChartDataComparison = (initialRatings, currentRatings, spheres = null) => {
+  // Если передан список сфер из API, используем его, иначе используем константы
+  const sphereKeys = spheres ? spheres.map(s => s.key) : SPHERE_KEYS
+  const sphereNames = spheres ? spheres.reduce((acc, s) => {
+    acc[s.key] = s.name
+    return acc
+  }, {}) : SPHERES
+  
+  const labels = sphereKeys.map(key => sphereNames[key] || key)
+  const initialData = sphereKeys.map(key => {
+    const value = initialRatings[key]
+    return value !== undefined && value !== null ? value : 0
+  })
+  const currentData = sphereKeys.map(key => {
+    const value = currentRatings[key]
+    return value !== undefined && value !== null ? value : 0
+  })
+  
+  return {
+    labels,
+    datasets: [
+      {
+        label: 'Было',
+        data: initialData,
+        backgroundColor: 'rgba(24, 144, 255, 0.1)',
+        borderColor: '#1890ff',
+        borderWidth: 2,
+        pointBackgroundColor: '#1890ff',
+        pointBorderColor: '#ffffff',
+        pointHoverBackgroundColor: '#ffffff',
+        pointHoverBorderColor: '#1890ff',
+      },
+      {
+        label: 'Стало',
+        data: currentData,
+        backgroundColor: 'rgba(82, 196, 26, 0.1)',
+        borderColor: '#52c41a',
+        borderWidth: 2,
+        pointBackgroundColor: '#52c41a',
+        pointBorderColor: '#ffffff',
+        pointHoverBackgroundColor: '#ffffff',
+        pointHoverBorderColor: '#52c41a',
+      }
+    ]
+  }
+}
+
+export const getSpiderChartOptions = (isDarkTheme = false, showLegend = false) => {
   const textColor = isDarkTheme ? 'rgba(255, 255, 255, 0.85)' : 'rgba(0, 0, 0, 0.85)'
   const gridColor = isDarkTheme ? 'rgba(255, 255, 255, 0.1)' : '#f0f0f0'
   
@@ -74,7 +121,27 @@ export const getSpiderChartOptions = (isDarkTheme = false) => {
     },
     plugins: {
       legend: {
-        display: false
+        display: showLegend,
+        position: 'bottom',
+        labels: {
+          usePointStyle: false,
+          padding: 15,
+          font: {
+            size: 14
+          },
+          color: textColor,
+          generateLabels: (chart) => {
+            const datasets = chart.data.datasets
+            return datasets.map((dataset, i) => ({
+              text: dataset.label,
+              fillStyle: dataset.borderColor,
+              strokeStyle: dataset.borderColor,
+              lineWidth: 2,
+              hidden: false,
+              index: i
+            }))
+          }
+        }
       }
     }
   }
