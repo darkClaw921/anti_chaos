@@ -102,9 +102,43 @@ const MonthlyReport = () => {
         {report && (
           <>
             {chartData && (
-              <div className="spider-chart-container" style={{ marginTop: '24px', marginBottom: '32px' }}>
-                <Radar data={chartData} options={getSpiderChartOptions(isDark, true)} />
-              </div>
+              <>
+                <div className="spider-chart-container" style={{ marginTop: '24px', marginBottom: '16px' }}>
+                  <Radar data={chartData} options={getSpiderChartOptions(isDark, false)} />
+                </div>
+                
+                {/* Легенда */}
+                <div style={{ 
+                  display: 'flex', 
+                  justifyContent: 'center', 
+                  gap: '24px', 
+                  marginBottom: '32px',
+                  fontSize: '14px'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div style={{ 
+                      width: '20px', 
+                      height: '2px', 
+                      backgroundColor: '#1890ff',
+                      borderBottom: '2px solid #1890ff'
+                    }}></div>
+                    <span style={{ color: isDark ? 'rgba(255, 255, 255, 0.85)' : 'rgba(0, 0, 0, 0.85)' }}>
+                      Было
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div style={{ 
+                      width: '20px', 
+                      height: '2px', 
+                      backgroundColor: '#52c41a',
+                      borderBottom: '2px solid #52c41a'
+                    }}></div>
+                    <span style={{ color: isDark ? 'rgba(255, 255, 255, 0.85)' : 'rgba(0, 0, 0, 0.85)' }}>
+                      Стало
+                    </span>
+                  </div>
+                </div>
+              </>
             )}
             
             {/* Активные сферы */}
