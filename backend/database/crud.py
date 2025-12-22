@@ -125,20 +125,39 @@ async def get_questions_by_sphere(db: AsyncSession, sphere: str, active_only: bo
     return list(result.scalars().all())
 
 
-async def get_random_question_by_sphere(db: AsyncSession, sphere: str, user_id: int) -> Optional[Question]:
-    # Получаем вопросы, на которые пользователь еще не отвечал сегодня
-    today = datetime.utcnow().date()
+async def get_random_question_by_sphere(
+    db: AsyncSession, 
+    sphere: str, 
+    user_id: int, 
+    since_date: Optional[datetime] = None
+) -> Optional[Question]:
+    """
+    Получает случайный вопрос по сфере, на который пользователь еще не отвечал.
     
+    Args:
+        db: Сессия базы данных
+        sphere: Ключ сферы
+        user_id: ID пользователя
+        since_date: Дата начала периода для проверки ответов. Если не указана, проверяются ответы за сегодня.
+    """
+    # Определяем дату начала периода для проверки ответов
+    if since_date is None:
+        # По умолчанию проверяем ответы за сегодня
+        check_date = datetime.combine(datetime.utcnow().date(), datetime.min.time())
+    else:
+        check_date = since_date
+    
+    # Получаем вопросы, на которые пользователь уже отвечал за период
     answered_questions_result = await db.execute(
         select(Answer.question_id)
         .where(and_(
             Answer.user_id == user_id,
-            Answer.date >= datetime.combine(today, datetime.min.time())
+            Answer.date >= check_date
         ))
     )
     answered_question_ids = [row[0] for row in answered_questions_result.all()]
     
-    # Сначала пробуем найти вопрос, на который еще не отвечали сегодня
+    # Пробуем найти вопрос, на который еще не отвечали за период
     query = select(Question).where(
         and_(
             Question.sphere == sphere,
@@ -154,20 +173,7 @@ async def get_random_question_by_sphere(db: AsyncSession, sphere: str, user_id: 
         import random
         return random.choice(questions)
     
-    # Если все вопросы отвечены, возвращаем любой активный вопрос из этой сферы
-    fallback_query = select(Question).where(
-        and_(
-            Question.sphere == sphere,
-            Question.is_active == True
-        )
-    )
-    fallback_result = await db.execute(fallback_query)
-    fallback_questions = list(fallback_result.scalars().all())
-    
-    if fallback_questions:
-        import random
-        return random.choice(fallback_questions)
-    
+    # Если все вопросы отвечены за период, возвращаем None (все вопросы уже отвечены)
     return None
 
 

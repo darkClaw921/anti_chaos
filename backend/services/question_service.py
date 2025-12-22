@@ -11,6 +11,7 @@ async def get_daily_question_for_user(db: AsyncSession, user_id: int, current_sp
     Вопросы идут из расписания рандомно.
     Если выбрана 1 фокус-сфера - вопросы только из этой сферы.
     Если выбраны 2 фокус-сферы - сначала все вопросы из первой сферы, потом все из второй.
+    Не показывает вопросы, на которые пользователь уже ответил за период с момента последнего изменения фокус-сфер.
     
     Args:
         db: Сессия базы данных
@@ -24,6 +25,9 @@ async def get_daily_question_for_user(db: AsyncSession, user_id: int, current_sp
         # Если нет фокус-сфер, используем fallback
         return await get_simple_question_for_user(db, user_id)
     
+    # Определяем дату последнего изменения фокус-сфер (минимальная selected_at)
+    min_selected_at = min(fs.selected_at for fs in focus_spheres)
+    
     # TODO: Реализовать логику работы с расписанием вопросов
     # Пока используем текущую логику с рандомным выбором
     # Когда расписание будет заполнено, здесь будет выбор из расписания
@@ -36,7 +40,8 @@ async def get_daily_question_for_user(db: AsyncSession, user_id: int, current_sp
             question = await crud.get_random_question_by_sphere(
                 db, 
                 current_sphere, 
-                user_id
+                user_id,
+                since_date=min_selected_at
             )
             if question:
                 return question
@@ -46,7 +51,8 @@ async def get_daily_question_for_user(db: AsyncSession, user_id: int, current_sp
         question = await crud.get_random_question_by_sphere(
             db, 
             focus_spheres[0].sphere, 
-            user_id
+            user_id,
+            since_date=min_selected_at
         )
         if question:
             return question
@@ -66,7 +72,8 @@ async def get_daily_question_for_user(db: AsyncSession, user_id: int, current_sp
         question = await crud.get_random_question_by_sphere(
             db, 
             focus_spheres[target_sphere_index].sphere, 
-            user_id
+            user_id,
+            since_date=min_selected_at
         )
         if question:
             return question
@@ -76,7 +83,8 @@ async def get_daily_question_for_user(db: AsyncSession, user_id: int, current_sp
             question = await crud.get_random_question_by_sphere(
                 db, 
                 focus_spheres[1].sphere, 
-                user_id
+                user_id,
+                since_date=min_selected_at
             )
             if question:
                 return question
@@ -99,7 +107,9 @@ async def get_spheres_for_rating_after_questions(db: AsyncSession, user_id: int)
 
 async def get_simple_question_for_user(db: AsyncSession, user_id: int) -> Optional[Question]:
     """
-    Получает упрощенный вопрос для пользователя
+    Получает упрощенный вопрос для пользователя.
+    Используется когда у пользователя нет фокус-сфер.
+    Проверяет только ответы за сегодня.
     """
     # Получаем все активные вопросы
     all_spheres = ["health", "relationships", "money", "energy", "career", "other"]
@@ -107,8 +117,9 @@ async def get_simple_question_for_user(db: AsyncSession, user_id: int) -> Option
     import random
     random.shuffle(all_spheres)
     
+    # Для простых вопросов проверяем только ответы за сегодня (since_date=None)
     for sphere in all_spheres:
-        question = await crud.get_random_question_by_sphere(db, sphere, user_id)
+        question = await crud.get_random_question_by_sphere(db, sphere, user_id, since_date=None)
         if question:
             return question
     
