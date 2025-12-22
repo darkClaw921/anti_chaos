@@ -177,8 +177,11 @@ export const api = {
   },
   
   // Questions
-  getDailyQuestion: async () => {
-    const response = await fetch(buildApiUrl('api/questions/daily'), {
+  getDailyQuestion: async (currentSphere = null) => {
+    const url = currentSphere 
+      ? buildApiUrl(`api/questions/daily?current_sphere=${encodeURIComponent(currentSphere)}`)
+      : buildApiUrl('api/questions/daily')
+    const response = await fetch(url, {
       headers: getHeaders()
     })
     return handleResponse(response)

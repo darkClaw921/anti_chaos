@@ -20,33 +20,50 @@ const DailyQuestion = () => {
   useEffect(() => {
     initTelegramWebApp()
     hideBackButton()
-    loadFocusSpheres()
-    loadQuestion()
     
     // Загружаем счетчики из localStorage
     const today = new Date().toDateString()
     const savedSkipCount = localStorage.getItem(`skip_count_${today}`)
     const savedNotUnderstoodCount = localStorage.getItem(`not_understood_count_${today}`)
+    const savedCurrentSphereIndex = localStorage.getItem(`current_sphere_index_${today}`)
+    
     if (savedSkipCount) setSkipCount(parseInt(savedSkipCount, 10))
     if (savedNotUnderstoodCount) setNotUnderstoodCount(parseInt(savedNotUnderstoodCount, 10))
+    if (savedCurrentSphereIndex) setCurrentSphereIndex(parseInt(savedCurrentSphereIndex, 10))
+    
+    // Загружаем фокус-сферы, а затем вопрос
+    loadFocusSpheres().then(() => {
+      loadQuestion()
+    })
   }, [])
 
   const loadFocusSpheres = async () => {
     try {
       const spheres = await api.getFocusSpheres()
       setFocusSpheres(spheres.map(s => s.sphere))
-      // Определяем текущую сферу на основе того, сколько вопросов уже отвечено
-      // Пока используем первую сферу, логика будет доработана позже
-      setCurrentSphereIndex(0)
+      // Определяем текущую сферу из localStorage или используем первую по умолчанию
+      const today = new Date().toDateString()
+      const savedCurrentSphereIndex = localStorage.getItem(`current_sphere_index_${today}`)
+      if (savedCurrentSphereIndex !== null) {
+        setCurrentSphereIndex(parseInt(savedCurrentSphereIndex, 10))
+      } else {
+        setCurrentSphereIndex(0)
+      }
     } catch (error) {
       console.error('Ошибка загрузки фокус-сфер:', error)
     }
   }
 
-  const loadQuestion = async () => {
+  const loadQuestion = async (sphereIndex = null) => {
     setLoading(true)
     try {
-      const data = await api.getDailyQuestion()
+      // Используем переданный индекс или текущий из state
+      const targetIndex = sphereIndex !== null ? sphereIndex : currentSphereIndex
+      // Определяем текущую сферу для запроса
+      const currentSphere = focusSpheres.length > 0 && targetIndex < focusSpheres.length
+        ? focusSpheres[targetIndex]
+        : null
+      const data = await api.getDailyQuestion(currentSphere)
       setQuestion(data)
       setAnswer('')
     } catch (error) {
@@ -78,8 +95,10 @@ const DailyQuestion = () => {
       const today = new Date().toDateString()
       localStorage.removeItem(`skip_count_${today}`)
       localStorage.removeItem(`not_understood_count_${today}`)
+      localStorage.removeItem(`current_sphere_index_${today}`)
       setSkipCount(0)
       setNotUnderstoodCount(0)
+      setCurrentSphereIndex(0)
       
       navigate('/confirmation', { 
         state: { 
@@ -101,16 +120,18 @@ const DailyQuestion = () => {
     localStorage.setItem(`skip_count_${today}`, newSkipCount.toString())
     
     // Если выбраны 2 сферы и это 2-е нажатие, переходим на 2-ю сферу
+    let newSphereIndex = currentSphereIndex
     if (focusSpheres.length === 2 && newSkipCount >= 2 && currentSphereIndex === 0) {
+      newSphereIndex = 1
       setCurrentSphereIndex(1)
-      // TODO: Добавить логику переключения на 2-ю сферу через API
-      // Пока просто загружаем следующий вопрос
+      // Сохраняем текущую сферу в localStorage для сохранения состояния
+      localStorage.setItem(`current_sphere_index_${today}`, '1')
     }
     
     // Если выбрана 1 сфера и это 2-е нажатие, больше не показываем кнопку "Пропустить"
     // Кнопка "Пропустить все вопросы сегодня" уже будет показана
     
-    await loadQuestion()
+    await loadQuestion(newSphereIndex)
   }
 
   const handleSkipAll = () => {
@@ -124,12 +145,15 @@ const DailyQuestion = () => {
     localStorage.setItem(`not_understood_count_${today}`, newNotUnderstoodCount.toString())
     
     // Если выбраны 2 сферы и это 2-е нажатие, переходим на 2-ю сферу
+    let newSphereIndex = currentSphereIndex
     if (focusSpheres.length === 2 && newNotUnderstoodCount >= 2 && currentSphereIndex === 0) {
+      newSphereIndex = 1
       setCurrentSphereIndex(1)
-      // TODO: Добавить логику переключения на 2-ю сферу через API
+      // Сохраняем текущую сферу в localStorage для сохранения состояния
+      localStorage.setItem(`current_sphere_index_${today}`, '1')
     }
     
-    await loadQuestion()
+    await loadQuestion(newSphereIndex)
   }
 
   if (loading) {

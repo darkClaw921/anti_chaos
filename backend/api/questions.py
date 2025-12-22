@@ -37,10 +37,11 @@ class QuestionUpdate(BaseModel):
 
 @router.get("/daily", response_model=QuestionResponse)
 async def get_daily_question(
+    current_sphere: Optional[str] = None,
     user = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    question = await get_daily_question_for_user(db, user.id)
+    question = await get_daily_question_for_user(db, user.id, current_sphere)
     if not question:
         raise HTTPException(status_code=404, detail="No question available")
     return question

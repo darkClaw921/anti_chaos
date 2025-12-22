@@ -5,12 +5,17 @@ from backend.database import crud
 from backend.database.models import Question, UserFocusSphere
 
 
-async def get_daily_question_for_user(db: AsyncSession, user_id: int) -> Optional[Question]:
+async def get_daily_question_for_user(db: AsyncSession, user_id: int, current_sphere: Optional[str] = None) -> Optional[Question]:
     """
     Получает вопрос дня для пользователя на основе его фокус-сфер и расписания.
     Вопросы идут из расписания рандомно.
     Если выбрана 1 фокус-сфера - вопросы только из этой сферы.
     Если выбраны 2 фокус-сферы - сначала все вопросы из первой сферы, потом все из второй.
+    
+    Args:
+        db: Сессия базы данных
+        user_id: ID пользователя
+        current_sphere: Текущая сфера для вопросов (если указана, используется она)
     """
     # Получаем фокус-сферы пользователя
     focus_spheres = await crud.get_user_focus_spheres(db, user_id)
@@ -23,6 +28,19 @@ async def get_daily_question_for_user(db: AsyncSession, user_id: int) -> Optiona
     # Пока используем текущую логику с рандомным выбором
     # Когда расписание будет заполнено, здесь будет выбор из расписания
     
+    # Если указана текущая сфера, используем её
+    if current_sphere:
+        # Проверяем, что текущая сфера является одной из фокус-сфер
+        sphere_keys = [fs.sphere for fs in focus_spheres]
+        if current_sphere in sphere_keys:
+            question = await crud.get_random_question_by_sphere(
+                db, 
+                current_sphere, 
+                user_id
+            )
+            if question:
+                return question
+    
     # Если выбрана 1 сфера - вопросы только из этой сферы
     if len(focus_spheres) == 1:
         question = await crud.get_random_question_by_sphere(
@@ -34,26 +52,34 @@ async def get_daily_question_for_user(db: AsyncSession, user_id: int) -> Optiona
             return question
     
     # Если выбраны 2 сферы - сначала все вопросы из первой, потом все из второй
-    # TODO: Добавить логику отслеживания текущей сферы и переключения на вторую
-    # Пока используем первую сферу
     if len(focus_spheres) >= 2:
-        # Пробуем получить вопрос из первой сферы
+        # Определяем текущую сферу: если не указана, используем первую
+        target_sphere_index = 0
+        if current_sphere:
+            # Если указана текущая сфера, находим её индекс
+            for idx, fs in enumerate(focus_spheres):
+                if fs.sphere == current_sphere:
+                    target_sphere_index = idx
+                    break
+        
+        # Пробуем получить вопрос из текущей сферы
         question = await crud.get_random_question_by_sphere(
             db, 
-            focus_spheres[0].sphere, 
+            focus_spheres[target_sphere_index].sphere, 
             user_id
         )
         if question:
             return question
         
-        # Если вопросов из первой сферы нет, пробуем вторую
-        question = await crud.get_random_question_by_sphere(
-            db, 
-            focus_spheres[1].sphere, 
-            user_id
-        )
-        if question:
-            return question
+        # Если вопросов из текущей сферы нет, пробуем вторую сферу (если это была первая)
+        if target_sphere_index == 0 and len(focus_spheres) >= 2:
+            question = await crud.get_random_question_by_sphere(
+                db, 
+                focus_spheres[1].sphere, 
+                user_id
+            )
+            if question:
+                return question
     
     # Fallback: если нет вопросов для фокус-сфер,
     # используем простой вопрос из любой сферы
