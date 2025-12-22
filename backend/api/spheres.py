@@ -77,6 +77,14 @@ async def update_focus_spheres(
     user = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
+    # Проверяем, можно ли изменить фокус-сферы
+    can_change = await crud.can_change_focus_spheres(db, user.id)
+    if not can_change:
+        raise HTTPException(
+            status_code=400,
+            detail="Нельзя изменить фокус-сферы: не все вопросы по текущим сферам отвечены за период с момента последнего изменения"
+        )
+    
     spheres = await crud.set_user_focus_spheres(db, user.id, data.spheres)
     return [{'id': s.id, 'sphere': s.sphere} for s in spheres]
 
@@ -88,6 +96,26 @@ async def get_focus_spheres(
 ):
     spheres = await crud.get_user_focus_spheres(db, user.id)
     return [{'id': s.id, 'sphere': s.sphere} for s in spheres]
+
+
+@router.get("/focus/can-change")
+async def can_change_focus_spheres(
+    user = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Проверяет, можно ли изменить фокус-сферы пользователя"""
+    can_change = await crud.can_change_focus_spheres(db, user.id)
+    
+    if can_change:
+        return {
+            "can_change": True,
+            "message": "Вы можете изменить фокус-сферы"
+        }
+    else:
+        return {
+            "can_change": False,
+            "message": "Нельзя изменить фокус-сферы: не все вопросы по текущим сферам отвечены за период с момента последнего изменения"
+        }
 
 
 @router.get("/for-rating-after-questions")

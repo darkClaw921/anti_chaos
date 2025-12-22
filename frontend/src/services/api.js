@@ -281,6 +281,13 @@ export const api = {
     return handleResponse(response)
   },
   
+  canChangeFocusSpheres: async () => {
+    const response = await fetch(buildApiUrl('api/spheres/focus/can-change'), {
+      headers: getHeaders()
+    })
+    return handleResponse(response)
+  },
+  
   getAllSpheres: async () => {
     const response = await fetch(buildApiUrl('api/spheres/all'), {
       headers: getHeaders()

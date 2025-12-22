@@ -303,6 +303,55 @@ async def get_user_focus_spheres(db: AsyncSession, user_id: int) -> List[UserFoc
     return list(result.scalars().all())
 
 
+async def can_change_focus_spheres(db: AsyncSession, user_id: int) -> bool:
+    """
+    Проверяет, можно ли изменить фокус-сферы пользователя.
+    Возвращает True, если все вопросы по текущим фокус-сферам отвечены
+    за период с момента последнего изменения фокус-сфер.
+    """
+    # Получаем текущие фокус-сферы пользователя
+    focus_spheres = await get_user_focus_spheres(db, user_id)
+    
+    # Если фокус-сфер нет, можно менять
+    if not focus_spheres:
+        return True
+    
+    # Определяем дату последнего изменения фокус-сфер (минимальная selected_at)
+    min_selected_at = min(fs.selected_at for fs in focus_spheres)
+    
+    # Для каждой фокус-сферы проверяем, что все активные вопросы отвечены
+    for focus_sphere in focus_spheres:
+        # Получаем все активные вопросы для этой сферы
+        questions = await get_questions_by_sphere(db, focus_sphere.sphere, active_only=True)
+        
+        # Если вопросов нет, пропускаем эту сферу
+        if not questions:
+            continue
+        
+        # Для каждого вопроса проверяем, есть ли ответ после даты изменения фокус-сфер
+        for question in questions:
+            # Проверяем, есть ли ответ на этот вопрос после даты изменения фокус-сфер
+            answer_result = await db.execute(
+                select(Answer)
+                .where(
+                    and_(
+                        Answer.user_id == user_id,
+                        Answer.question_id == question.id,
+                        Answer.date >= min_selected_at
+                    )
+                )
+                .limit(1)
+            )
+            answer = answer_result.scalar_one_or_none()
+            
+            # Если на вопрос нет ответа, нельзя менять фокус-сферы
+            if not answer:
+                return False
+    
+    # Все вопросы отвечены, можно менять
+    return True
+
+
 async def check_onboarding_completed(db: AsyncSession, user_id: int) -> bool:
     """Проверяет, завершен ли онбординг пользователя"""
     # Получаем список всех сфер жизни из базы данных

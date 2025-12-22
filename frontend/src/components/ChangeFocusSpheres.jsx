@@ -14,6 +14,8 @@ const ChangeFocusSpheres = () => {
   const [spheres, setSpheres] = useState([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [canChange, setCanChange] = useState(true)
+  const [checkMessage, setCheckMessage] = useState('')
 
   useEffect(() => {
     initTelegramWebApp()
@@ -27,10 +29,11 @@ const ChangeFocusSpheres = () => {
 
   const loadData = async () => {
     try {
-      const [focusData, ratingsData, spheresData] = await Promise.all([
+      const [focusData, ratingsData, spheresData, canChangeData] = await Promise.all([
         api.getFocusSpheres(),
         api.getSphereRatings(),
-        api.getAllSpheres()
+        api.getAllSpheres(),
+        api.canChangeFocusSpheres()
       ])
       
       setSelectedSpheres(focusData.map(s => s.sphere))
@@ -41,7 +44,28 @@ const ChangeFocusSpheres = () => {
       })
       setRatings(ratingsMap)
       
-      setSpheres(spheresData)
+      setCanChange(canChangeData.can_change)
+      setCheckMessage(canChangeData.message || '')
+      
+      // Сортируем сферы по оценкам по возрастанию (сферы без оценок в конце)
+      const sortedSpheres = [...spheresData].sort((a, b) => {
+        const ratingA = ratingsMap[a.key] || 0
+        const ratingB = ratingsMap[b.key] || 0
+        
+        // Если обе сферы без оценок, сохраняем исходный порядок
+        if (ratingA === 0 && ratingB === 0) {
+          return 0
+        }
+        
+        // Сферы без оценок идут в конец
+        if (ratingA === 0) return 1
+        if (ratingB === 0) return -1
+        
+        // Сортируем по возрастанию оценок
+        return ratingA - ratingB
+      })
+      
+      setSpheres(sortedSpheres)
     } catch (error) {
       console.error('Ошибка загрузки данных:', error)
       // Используем константы как fallback для сфер
@@ -56,6 +80,12 @@ const ChangeFocusSpheres = () => {
   }
 
   const handleSphereClick = (sphere) => {
+    // Блокируем выбор если нельзя менять фокус-сферы
+    if (!canChange) {
+      alert(checkMessage || 'Нельзя изменить фокус-сферы: не все вопросы по текущим сферам отвечены')
+      return
+    }
+    
     setSelectedSpheres(prev => {
       if (prev.includes(sphere)) {
         return prev.filter(s => s !== sphere)
@@ -71,6 +101,18 @@ const ChangeFocusSpheres = () => {
     if (selectedSpheres.length === 0) {
       alert('Выберите хотя бы одну сферу')
       return
+    }
+
+    // Проверяем возможность изменения перед сохранением
+    try {
+      const canChangeData = await api.canChangeFocusSpheres()
+      if (!canChangeData.can_change) {
+        alert(canChangeData.message || 'Нельзя изменить фокус-сферы: не все вопросы по текущим сферам отвечены')
+        return
+      }
+    } catch (error) {
+      console.error('Ошибка проверки возможности изменения:', error)
+      // Продолжаем попытку сохранения, так как проверка на бэкенде все равно выполнится
     }
 
     setSaving(true)
@@ -100,7 +142,20 @@ const ChangeFocusSpheres = () => {
       <div className="content">
         <h2 className="text-title">Изменение фокус-сфер</h2>
         
-        <div className="sphere-grid" style={{ marginTop: '36px' }}>
+        {!canChange && (
+          <div style={{ 
+            marginTop: '16px', 
+            padding: '12px', 
+            backgroundColor: '#fff3cd', 
+            borderRadius: '8px',
+            color: '#856404',
+            fontSize: '14px'
+          }}>
+            {checkMessage || 'Нельзя изменить фокус-сферы: не все вопросы по текущим сферам отвечены за период с момента последнего изменения'}
+          </div>
+        )}
+        
+        <div className="sphere-grid" style={{ marginTop: '36px', opacity: canChange ? 1 : 0.5 }}>
           {spheres.map(sphere => {
             const isSelected = selectedSpheres.includes(sphere.key)
             const rating = ratings[sphere.key]
@@ -110,6 +165,7 @@ const ChangeFocusSpheres = () => {
                 key={sphere.key}
                 className={`sphere-card ${isSelected ? 'selected' : ''}`}
                 onClick={() => handleSphereClick(sphere.key)}
+                style={{ cursor: canChange ? 'pointer' : 'not-allowed' }}
               >
                 {rating && (
                   <span className="sphere-rating">{rating}/10</span>
@@ -129,7 +185,7 @@ const ChangeFocusSpheres = () => {
         <Button 
           onClick={handleSave} 
           type="primary"
-          disabled={saving || selectedSpheres.length === 0}
+          disabled={saving || selectedSpheres.length === 0 || !canChange}
         >
           {saving ? 'Сохранение...' : 'Сохранить'}
         </Button>
