@@ -4,7 +4,7 @@ from typing import List, Optional
 from datetime import datetime, timedelta
 from backend.database.models import (
     User, UserSphere, Question, Answer, 
-    UserFocusSphere, Subscription, UserSettings
+    UserFocusSphere, Subscription, UserSettings, Sphere
 )
 
 
@@ -427,4 +427,59 @@ async def create_question_schedule_entry(
     # TODO: Реализовать создание записи в таблице question_schedule
     # Пока просто pass
     pass
+
+
+# Sphere CRUD
+async def get_all_spheres(db: AsyncSession) -> List[Sphere]:
+    """Получить все сферы"""
+    result = await db.execute(select(Sphere).order_by(Sphere.key))
+    return list(result.scalars().all())
+
+
+async def get_sphere_by_key(db: AsyncSession, key: str) -> Optional[Sphere]:
+    """Получить сферу по ключу"""
+    result = await db.execute(select(Sphere).where(Sphere.key == key))
+    return result.scalar_one_or_none()
+
+
+async def create_sphere(db: AsyncSession, key: str, name: str, color: str) -> Sphere:
+    """Создать новую сферу"""
+    sphere = Sphere(key=key, name=name, color=color)
+    db.add(sphere)
+    await db.commit()
+    await db.refresh(sphere)
+    return sphere
+
+
+async def update_sphere(
+    db: AsyncSession,
+    sphere_id: int,
+    name: Optional[str] = None,
+    color: Optional[str] = None
+) -> Optional[Sphere]:
+    """Обновить сферу"""
+    sphere = await db.get(Sphere, sphere_id)
+    if not sphere:
+        return None
+    
+    if name is not None:
+        sphere.name = name
+    if color is not None:
+        sphere.color = color
+    
+    sphere.updated_at = datetime.utcnow()
+    await db.commit()
+    await db.refresh(sphere)
+    return sphere
+
+
+async def delete_sphere(db: AsyncSession, sphere_id: int) -> bool:
+    """Удалить сферу"""
+    sphere = await db.get(Sphere, sphere_id)
+    if not sphere:
+        return False
+    
+    await db.delete(sphere)
+    await db.commit()
+    return True
 

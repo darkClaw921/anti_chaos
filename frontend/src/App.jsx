@@ -20,6 +20,8 @@ import ChangeFocusSpheres from './components/ChangeFocusSpheres'
 import ReturnAfterPause from './components/ReturnAfterPause'
 import SimpleQuestion from './components/SimpleQuestion'
 import QuestionDatabase from './components/QuestionDatabase'
+import EditSphereRating from './components/EditSphereRating'
+import SphereManagement from './components/SphereManagement'
 
 function App() {
   return (
@@ -42,6 +44,8 @@ function App() {
           <Route path="account" element={<Account />} />
           <Route path="settings" element={<Settings />} />
           <Route path="change-spheres" element={<ChangeFocusSpheres />} />
+          <Route path="edit-sphere-rating" element={<EditSphereRating />} />
+          <Route path="sphere-management" element={<SphereManagement />} />
           <Route path="return" element={<ReturnAfterPause />} />
           <Route path="simple" element={<SimpleQuestion />} />
           <Route path="questions-database" element={<QuestionDatabase />} />

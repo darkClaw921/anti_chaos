@@ -186,17 +186,43 @@ const Settings = () => {
               <span style={{ color: '#999' }}>›</span>
             </div>
           </div>
+          
+          <div 
+            className="form-group" 
+            style={{ 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'center', 
+              padding: '12px 0',
+              cursor: 'pointer'
+            }}
+            onClick={() => navigate('/edit-sphere-rating')}
+          >
+            <label className="form-label" style={{ margin: 0, cursor: 'pointer' }}>Изменить оценку сфер</label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontSize: '18px' }}>⭐</span>
+              <span style={{ color: '#999' }}>›</span>
+            </div>
+          </div>
         </div>
         
         {isAdmin && (
           <div style={{ marginTop: '36px', paddingTop: '24px', borderTop: '1px solid #d9d9d9' }}>
             <h3 style={{ marginBottom: '16px', fontSize: '18px' }}>Админ-панель</h3>
-            <Button 
-              onClick={() => navigate('/questions-database')} 
-              type="primary"
-            >
-              База вопросов
-            </Button>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <Button 
+                onClick={() => navigate('/questions-database')} 
+                type="primary"
+              >
+                База вопросов
+              </Button>
+              <Button 
+                onClick={() => navigate('/sphere-management')} 
+                type="primary"
+              >
+                Управление сферами
+              </Button>
+            </div>
           </div>
         )}
       </div>

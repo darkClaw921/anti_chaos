@@ -364,6 +364,40 @@ export const api = {
       headers: getHeaders()
     })
     return handleResponse(response)
+  },
+  
+  // Admin Spheres
+  getAllSpheres: async () => {
+    const response = await fetch(buildApiUrl('api/spheres/admin/all'), {
+      headers: getHeaders()
+    })
+    return handleResponse(response)
+  },
+  
+  createSphere: async (sphereData) => {
+    const response = await fetch(buildApiUrl('api/spheres/admin/'), {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify(sphereData)
+    })
+    return handleResponse(response)
+  },
+  
+  updateSphere: async (sphereId, sphereData) => {
+    const response = await fetch(buildApiUrl(`api/spheres/admin/${sphereId}`), {
+      method: 'PUT',
+      headers: getHeaders(),
+      body: JSON.stringify(sphereData)
+    })
+    return handleResponse(response)
+  },
+  
+  deleteSphere: async (sphereId) => {
+    const response = await fetch(buildApiUrl(`api/spheres/admin/${sphereId}`), {
+      method: 'DELETE',
+      headers: getHeaders()
+    })
+    return handleResponse(response)
   }
 }
 

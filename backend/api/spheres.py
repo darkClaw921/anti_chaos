@@ -1,10 +1,10 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from backend.database.database import get_db
 from backend.database import crud
-from backend.api.users import get_current_user
+from backend.api.users import get_current_user, get_admin_user
 from pydantic import BaseModel
-from typing import List
+from typing import List, Optional
 
 router = APIRouter(prefix="/api/spheres", tags=["spheres"])
 
@@ -90,4 +90,104 @@ async def get_spheres_for_rating_after_questions_endpoint(
     from backend.services.question_service import get_spheres_for_rating_after_questions
     spheres = await get_spheres_for_rating_after_questions(db, user.id)
     return {'spheres': spheres}
+
+
+# Admin endpoints для управления сферами
+class SphereCreate(BaseModel):
+    key: str
+    name: str
+    color: str
+
+
+class SphereUpdate(BaseModel):
+    name: Optional[str] = None
+    color: Optional[str] = None
+
+
+class SphereResponse(BaseModel):
+    id: int
+    key: str
+    name: str
+    color: str
+    created_at: str
+    updated_at: str
+    
+    class Config:
+        from_attributes = True
+
+
+@router.get("/admin/all", response_model=List[SphereResponse])
+async def get_all_spheres_admin(
+    admin = Depends(get_admin_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Получить все сферы (только для админов)"""
+    spheres = await crud.get_all_spheres(db)
+    return [{
+        'id': s.id,
+        'key': s.key,
+        'name': s.name,
+        'color': s.color,
+        'created_at': s.created_at.isoformat(),
+        'updated_at': s.updated_at.isoformat()
+    } for s in spheres]
+
+
+@router.post("/admin/", response_model=SphereResponse)
+async def create_sphere_admin(
+    data: SphereCreate,
+    admin = Depends(get_admin_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Создать новую сферу (только для админов)"""
+    # Проверяем, не существует ли уже сфера с таким ключом
+    existing = await crud.get_sphere_by_key(db, data.key)
+    if existing:
+        raise HTTPException(status_code=400, detail=f"Сфера с ключом '{data.key}' уже существует")
+    
+    sphere = await crud.create_sphere(db, data.key, data.name, data.color)
+    return {
+        'id': sphere.id,
+        'key': sphere.key,
+        'name': sphere.name,
+        'color': sphere.color,
+        'created_at': sphere.created_at.isoformat(),
+        'updated_at': sphere.updated_at.isoformat()
+    }
+
+
+@router.put("/admin/{sphere_id}", response_model=SphereResponse)
+async def update_sphere_admin(
+    sphere_id: int,
+    data: SphereUpdate,
+    admin = Depends(get_admin_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Обновить сферу (только для админов)"""
+    sphere = await crud.update_sphere(db, sphere_id, data.name, data.color)
+    if not sphere:
+        raise HTTPException(status_code=404, detail="Сфера не найдена")
+    
+    return {
+        'id': sphere.id,
+        'key': sphere.key,
+        'name': sphere.name,
+        'color': sphere.color,
+        'created_at': sphere.created_at.isoformat(),
+        'updated_at': sphere.updated_at.isoformat()
+    }
+
+
+@router.delete("/admin/{sphere_id}")
+async def delete_sphere_admin(
+    sphere_id: int,
+    admin = Depends(get_admin_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Удалить сферу (только для админов)"""
+    success = await crud.delete_sphere(db, sphere_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Сфера не найдена")
+    
+    return {"message": "Сфера успешно удалена"}
 

@@ -49,9 +49,11 @@ async def startup():
     # Выполняем миграции для существующих таблиц
     from backend.database.migrate_settings import migrate as migrate_settings
     from backend.database.migrate_user_profile import migrate as migrate_user_profile
+    from backend.database.migrate_spheres import migrate as migrate_spheres
     try:
         await migrate_settings()
         await migrate_user_profile()
+        await migrate_spheres()
     except Exception as e:
         print(f"Ошибка при выполнении миграций: {e}")
     

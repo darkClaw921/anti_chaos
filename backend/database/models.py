@@ -116,3 +116,18 @@ class QuestionSchedule(Base):
     
     question = relationship("Question")
 
+
+class Sphere(Base):
+    """
+    Модель для хранения определений сфер жизни.
+    Хранит ключ сферы, название и цвет для отображения.
+    """
+    __tablename__ = "spheres"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    key = Column(String, unique=True, nullable=False, index=True)  # health, relationships, money, etc.
+    name = Column(String, nullable=False)  # Название сферы (Здоровье, Отношения, etc.)
+    color = Column(String, nullable=False)  # Цвет в hex формате (#52c41a)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
