@@ -1,10 +1,10 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, and_
+from sqlalchemy import select, and_, delete
 from typing import List, Optional
 from datetime import datetime, timedelta
 from backend.database.models import (
     User, UserSphere, Question, Answer, 
-    UserFocusSphere, Subscription, UserSettings, Sphere
+    UserFocusSphere, Subscription, UserSettings, Sphere, QuestionSchedule
 )
 
 
@@ -305,15 +305,16 @@ async def get_user_focus_spheres(db: AsyncSession, user_id: int) -> List[UserFoc
 
 async def check_onboarding_completed(db: AsyncSession, user_id: int) -> bool:
     """Проверяет, завершен ли онбординг пользователя"""
-    # Список всех сфер жизни
-    all_spheres = ["health", "relationships", "money", "energy", "career", "other"]
+    # Получаем список всех сфер жизни из базы данных
+    all_spheres_list = await get_all_spheres(db)
+    all_spheres_keys = {sphere.key for sphere in all_spheres_list}
     
     # Проверяем, есть ли оценки для всех сфер
     latest_spheres = await get_latest_user_spheres(db, user_id)
     rated_spheres = {sphere.sphere for sphere in latest_spheres}
     
     # Проверяем, что все сферы оценены
-    all_spheres_rated = all(sphere in rated_spheres for sphere in all_spheres)
+    all_spheres_rated = all(sphere_key in rated_spheres for sphere_key in all_spheres_keys)
     
     # Проверяем, есть ли хотя бы одна фокус-сфера
     focus_spheres = await get_user_focus_spheres(db, user_id)
@@ -474,11 +475,37 @@ async def update_sphere(
 
 
 async def delete_sphere(db: AsyncSession, sphere_id: int) -> bool:
-    """Удалить сферу"""
+    """Удалить сферу и все связанные данные"""
     sphere = await db.get(Sphere, sphere_id)
     if not sphere:
         return False
     
+    sphere_key = sphere.key
+    
+    # Удаляем все оценки сфер пользователей
+    await db.execute(
+        delete(UserSphere).where(UserSphere.sphere == sphere_key)
+    )
+    
+    # Удаляем все фокус-сферы пользователей
+    await db.execute(
+        delete(UserFocusSphere).where(UserFocusSphere.sphere == sphere_key)
+    )
+    
+    # Удаляем все записи из расписания вопросов
+    await db.execute(
+        delete(QuestionSchedule).where(QuestionSchedule.sphere == sphere_key)
+    )
+    
+    # Получаем все вопросы этой сферы для удаления (ответы удалятся автоматически благодаря каскаду)
+    questions_result = await db.execute(
+        select(Question).where(Question.sphere == sphere_key)
+    )
+    questions = questions_result.scalars().all()
+    for question in questions:
+        await db.delete(question)
+    
+    # Удаляем саму сферу
     await db.delete(sphere)
     await db.commit()
     return True
