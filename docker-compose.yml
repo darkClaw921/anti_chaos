@@ -1,0 +1,50 @@
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: antichaos-backend
+    expose:
+      - "8100"
+    env_file:
+      - .env
+    volumes:
+      - ./antichaos.db:/app/antichaos.db:rw
+      - ./.env:/app/.env:ro
+    working_dir: /app
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8100/health').read()"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      args:
+        - VITE_API_URL=
+    container_name: antichaos-frontend
+    ports:
+      - "5173:5173"
+    env_file:
+      - .env
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  bot:
+    build:
+      context: .
+      dockerfile: bot/Dockerfile
+    container_name: antichaos-bot
+    env_file:
+      - .env
+    volumes:
+      - ./.env:/app/.env:ro
+    depends_on:
+      - backend
+    restart: unless-stopped
+

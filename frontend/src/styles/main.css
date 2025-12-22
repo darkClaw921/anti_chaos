@@ -1,0 +1,290 @@
+/* Основные стили приложения */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #ffffff;
+  color: rgba(0, 0, 0, 0.85);
+  overflow-x: hidden;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+body.dark-theme {
+  background-color: #141414;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+body.dark-theme h1,
+body.dark-theme h2,
+body.dark-theme h3,
+body.dark-theme h4,
+body.dark-theme h5,
+body.dark-theme h6 {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+/* Убеждаемся, что все элементы наследуют темную тему */
+body.dark-theme .container,
+.dark-theme .container {
+  background-color: #141414 !important;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+body.dark-theme .content,
+.dark-theme .content {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+#root {
+  width: 100%;
+  min-height: 100vh;
+  max-width: 375px;
+  margin: 0 auto;
+  background-color: #ffffff;
+  transition: background-color 0.3s ease;
+}
+
+.dark-theme #root {
+  background-color: #141414;
+}
+
+/* Типографика */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+h1 {
+  font-size: 20px;
+  line-height: 28px;
+}
+
+h2 {
+  font-size: 18px;
+  line-height: 24px;
+}
+
+p {
+  font-size: 16px;
+  line-height: 24px;
+}
+
+/* Контейнеры */
+.container {
+  padding: 36px 16px 60px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: #ffffff;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.dark-theme .container {
+  background-color: #141414;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  background-color: transparent;
+}
+
+/* Кнопки */
+.btn {
+  width: 100%;
+  height: 40px;
+  border-radius: 2px;
+  border: none;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 24px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.btn-primary {
+  background-color: #1890ff;
+  color: #ffffff;
+  box-shadow: 0px 2px 0px 0px rgba(0, 0, 0, 0.04);
+}
+
+.btn-primary:hover {
+  background-color: #40a9ff;
+}
+
+.btn-primary:active {
+  background-color: #096dd9;
+}
+
+.btn-secondary {
+  background-color: #ffffff;
+  color: rgba(0, 0, 0, 0.85);
+  border: 1px solid #d9d9d9;
+  box-shadow: 0px 2px 0px 0px rgba(0, 0, 0, 0.02);
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+.dark-theme .btn-secondary {
+  background-color: #1f1f1f;
+  color: rgba(255, 255, 255, 0.85);
+  border-color: #434343;
+}
+
+.dark-theme .btn-secondary:hover {
+  border-color: #1890ff;
+  color: #1890ff;
+}
+
+.btn-secondary:hover {
+  border-color: #40a9ff;
+  color: #1890ff;
+}
+
+.btn-secondary:active {
+  border-color: #096dd9;
+}
+
+.btn-group {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  width: 100%;
+}
+
+/* Текст */
+.text-center {
+  text-align: center;
+}
+
+.text-title {
+  font-size: 20px;
+  font-weight: 500;
+  line-height: 28px;
+  color: rgba(0, 0, 0, 0.85);
+  margin-bottom: 36px;
+  transition: color 0.3s ease;
+}
+
+.dark-theme .text-title {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+/* Формы */
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-label {
+  display: block;
+  font-size: 14px;
+  margin-bottom: 8px;
+  color: rgba(0, 0, 0, 0.85);
+  transition: color 0.3s ease;
+}
+
+.dark-theme .form-label {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.form-input,
+.form-textarea {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #d9d9d9;
+  border-radius: 2px;
+  font-size: 16px;
+  font-family: inherit;
+  background-color: #ffffff;
+  color: rgba(0, 0, 0, 0.85);
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+.dark-theme .form-input,
+.dark-theme .form-textarea {
+  background-color: #1f1f1f;
+  border-color: #434343;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.form-textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+.form-input:focus,
+.form-textarea:focus {
+  outline: none;
+  border-color: #1890ff;
+  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+}
+
+/* Утилиты */
+.mt-auto {
+  margin-top: auto;
+}
+
+.mb-16 {
+  margin-bottom: 16px;
+}
+
+.mb-24 {
+  margin-bottom: 24px;
+}
+
+.mb-36 {
+  margin-bottom: 36px;
+}
+
+/* Дополнительные стили для темной темы */
+.dark-theme select.form-input {
+  background-color: #1f1f1f;
+  color: rgba(255, 255, 255, 0.85);
+  border-color: #434343;
+}
+
+.dark-theme select.form-input option {
+  background-color: #1f1f1f;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.dark-theme input[type="date"].form-input,
+.dark-theme input[type="time"].form-input {
+  background-color: #1f1f1f;
+  color: rgba(255, 255, 255, 0.85);
+  border-color: #434343;
+}
+
+.dark-theme input[type="date"].form-input::-webkit-calendar-picker-indicator,
+.dark-theme input[type="time"].form-input::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  opacity: 0.7;
+}
+
+.dark-theme h3 {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.dark-theme .form-group {
+  border-color: #434343;
+}
+
+/* Адаптивность */
+@media (max-width: 375px) {
+  .container {
+    padding: 24px 12px 40px;
+  }
+}
+

@@ -1,0 +1,251 @@
+# Архитектура проекта АнтиChaos Telegram Mini App
+
+## Общее описание
+
+Telegram Mini App для саморазвития, который помогает пользователям отслеживать прогресс в различных сферах жизни через ежедневные вопросы и визуализацию прогресса.
+
+## Структура проекта
+
+### Docker конфигурация:
+- `docker-compose.yml` - оркестрация всех сервисов (backend, frontend, bot)
+- `backend/Dockerfile` - образ для backend сервиса
+- `frontend/Dockerfile` - образ для frontend сервиса (многоэтапная сборка с nginx для production)
+- `frontend/nginx.conf` - конфигурация nginx для раздачи статики и проксирования API запросов к backend
+- `bot/Dockerfile` - образ для Telegram бота
+- `.dockerignore` - исключения для Docker сборки
+
+### Frontend (`frontend/`)
+
+Веб-приложение на React, работающее внутри Telegram через WebView.
+
+#### Основные файлы:
+- `public/index.html` - главная HTML страница
+- `src/index.jsx` - точка входа приложения
+- `src/App.jsx` - главный компонент с роутингом
+
+#### Компоненты (`src/components/`):
+- `WelcomeScreen.jsx` - экран приветствия (Экран 01, проверяет статус онбординга при загрузке и редиректит на `/daily`, если онбординг завершен)
+- `FormatExplanation.jsx` - объяснение формата работы (Экран 02)
+- `SphereRating.jsx` - оценка сфер жизни (Экран 03)
+- `SphereSelection.jsx` - выбор фокус-сфер (Экран 04)
+- `SpiderChart.jsx` - отображение паутинки прогресса (Экран 05)
+- `DailyQuestion.jsx` - вопрос дня (Экраны 06-07)
+- `AnswerForm.jsx` - форма ответа на вопрос (Экран 07.1)
+- `Confirmation.jsx` - подтверждение ответа (Экран 08)
+- `MiniReward.jsx` - мини-награда (Экран 09)
+- `DailySummary.jsx` - итоги дня (Экран 10)
+- `Progress.jsx` - прогресс за период (Экран 11)
+- `WeeklySummary.jsx` - итоги недели (Экран 12)
+- `MonthlyReport.jsx` - месячный отчёт (Экран 13)
+- `Menu.jsx` - главное меню (Экран 18)
+- `Account.jsx` - профиль пользователя (Экран 19)
+- `Settings.jsx` - настройки (Экран 20, включает параметр "Тестовые уведомления" только для админов)
+- `ChangeFocusSpheres.jsx` - смена фокус-сфер (Экран 21)
+- `ReturnAfterPause.jsx` - возврат после паузы (Экран 16)
+- `SimpleQuestion.jsx` - упрощённый вопрос (Экран 17)
+- `QuestionDatabase.jsx` - база вопросов для админов (Экран 22)
+- `Button.jsx` - переиспользуемый компонент кнопки
+
+#### Сервисы (`src/services/`):
+- `api.js` - HTTP клиент для работы с backend API (поддерживает Telegram и гостевой режим, сохраняет guest_user_id в localStorage, включает методы для админов: `checkIsAdmin`, `getAllQuestions`, `createQuestion`, `updateQuestion`, `deleteQuestion`, метод `deleteAccount` для удаления аккаунта, метод `checkOnboardingStatus` для проверки статуса онбординга)
+- `telegram.js` - интеграция с Telegram Web App API (все функции проверяют наличие Telegram и работают без него)
+
+#### Утилиты (`src/utils/`):
+- `constants.js` - константы приложения (сферы жизни, цвета)
+- `chart.js` - утилиты для работы с графиками
+
+#### Стили (`src/styles/`):
+- `main.css` - основные стили приложения
+- `components.css` - стили компонентов
+
+### Backend (`backend/`)
+
+FastAPI приложение, предоставляющее REST API для фронтенда.
+
+#### Основные файлы:
+- `main.py` - точка входа FastAPI приложения
+- `config.py` - конфигурация приложения
+
+#### API endpoints (`api/`):
+- `users.py` - endpoints для работы с пользователями (поддерживает Telegram и гостевой режим через `get_current_user`, включает проверку админа через `get_admin_user` и endpoint `/api/users/is-admin`, endpoint `DELETE /api/users/me` для удаления аккаунта, endpoint `GET /api/users/onboarding-status` для проверки статуса онбординга)
+- `questions.py` - endpoints для работы с вопросами (включает админские endpoints `/api/questions/admin/*` для CRUD операций)
+- `answers.py` - endpoints для работы с ответами
+- `progress.py` - endpoints для получения прогресса
+- `settings.py` - endpoints для настроек пользователя (включает поддержку параметра `admin_test_notifications` только для админов)
+- `spheres.py` - endpoints для работы со сферами жизни
+
+#### База данных (`database/`):
+- `database.py` - подключение к БД и сессии
+- `models.py` - модели данных SQLAlchemy:
+  - `User` - пользователи (telegram_id может быть отрицательным для гостевых пользователей)
+  - `UserSphere` - оценки сфер пользователя
+  - `Question` - вопросы
+  - `Answer` - ответы пользователей
+  - `UserFocusSphere` - выбранные фокус-сферы
+  - `Subscription` - подписки пользователей
+  - `UserSettings` - настройки пользователей
+- `crud.py` - CRUD операции для всех моделей (включая `get_user_by_id` для гостевого режима, функции для управления вопросами: `get_all_questions`, `create_question`, `update_question`, `delete_question`, функция `delete_user_account` для удаления всех данных пользователя, функция `has_user_answered_today` для проверки, ответил ли пользователь сегодня на вопрос, поддержка параметра `admin_test_notifications` в `update_user_settings`, функция `check_onboarding_completed` для проверки завершения онбординга - проверяет наличие оценок всех сфер и хотя бы одной фокус-сферы)
+
+#### Сервисы (`services/`):
+- `telegram_auth.py` - проверка авторизации через Telegram Web App API
+- `question_service.py` - бизнес-логика работы с вопросами
+- `progress_service.py` - расчёт прогресса пользователя
+
+### Bot (`bot/`)
+
+Telegram бот для запуска Mini App и отправки уведомлений пользователям.
+
+#### Файлы:
+- `bot.py` - основной код бота с командой /start и запуском сервиса уведомлений
+- `config.py` - конфигурация бота
+
+#### Сервисы (`services/`):
+- `notification_service.py` - сервис для отправки уведомлений пользователям о необходимости ответить на вопросы (проверяет настройки пользователя, время уведомления, статус паузы, отправляет уведомления только пользователям с положительным telegram_id, которые еще не ответили сегодня)
+
+## Технологии
+
+### Frontend:
+- React 18
+- React Router DOM 6
+- Chart.js + react-chartjs-2 для графиков
+- Vite для сборки
+- Telegram Web App API для интеграции с Telegram
+
+### Backend:
+- Python 3.12+
+- FastAPI для REST API
+- SQLAlchemy для работы с БД
+- aiosqlite для асинхронной работы с SQLite
+- Pydantic для валидации данных
+- python-telegram-bot для Telegram бота
+- uv для управления зависимостями
+
+### Инфраструктура:
+- Docker и Docker Compose для контейнеризации
+- Многоэтапная сборка для оптимизации образов
+
+## База данных
+
+Используется SQLite (можно заменить на PostgreSQL).
+
+### Таблицы:
+1. `users` - пользователи (telegram_id, username, first_name, last_name, created_at)
+2. `user_spheres` - оценки сфер (user_id, sphere, rating, date)
+3. `questions` - база вопросов (id, sphere, text, type, is_active)
+4. `answers` - ответы пользователей (user_id, question_id, answer, date)
+5. `user_focus_spheres` - фокус-сферы (user_id, sphere, selected_at)
+6. `subscriptions` - подписки (user_id, plan, expires_at)
+7. `user_settings` - настройки (user_id, notification_time, language, is_paused, admin_test_notifications)
+
+## Поток данных
+
+1. Пользователь открывает Mini App через Telegram бота
+2. Frontend получает initData от Telegram Web App API
+3. Frontend отправляет запросы к Backend API с initData в заголовках
+4. Backend проверяет initData через `telegram_auth.py`
+5. Backend выполняет операции с БД через SQLAlchemy
+6. Backend возвращает данные в формате JSON
+7. Frontend отображает данные пользователю
+
+## Авторизация
+
+Приложение поддерживает два режима авторизации:
+
+### Режим Telegram (основной)
+- Frontend получает `initData` от Telegram Web App API
+- `initData` передаётся в заголовке `X-Telegram-Init-Data` при каждом запросе
+- Backend проверяет подпись `initData` используя секретный ключ бота
+- Из `initData` извлекается `telegram_id` пользователя
+- Пользователь создаётся автоматически при первом обращении
+
+### Гостевой режим (без Telegram)
+- Если `initData` отсутствует, используется гостевой режим
+- Frontend сохраняет `guest_user_id` в localStorage после первого запроса
+- `guest_user_id` передаётся в заголовке `X-Guest-User-Id` при каждом запросе
+- Backend создаёт гостевого пользователя с отрицательным `telegram_id` при первом обращении
+- Гостевые пользователи имеют username вида `guest_<telegram_id>` и имя "Гость"
+- Приложение полностью функционально в гостевом режиме и может работать в обычном браузере
+
+## Основные функции
+
+1. **Онбординг**: оценка всех сфер жизни, выбор фокус-сфер, показ первой паутинки
+2. **Ежедневный цикл**: получение вопроса дня, ответ на вопрос, подтверждение, награда
+3. **Прогресс**: визуализация прогресса за день, неделю, месяц через графики паутинки
+4. **Настройки**: изменение времени уведомлений, языка, пауза бота
+5. **Меню**: навигация по всем функциям приложения
+6. **Админ-панель**: управление базой вопросов (доступно только админам, указанным в ADMINS в .env)
+7. **Уведомления**: автоматическая отправка напоминаний пользователям о необходимости ответить на вопрос дня в указанное время (учитывает настройки notification_time и is_paused, отправляет только пользователям с положительным telegram_id, которые еще не ответили сегодня; для админов доступен параметр admin_test_notifications для получения уведомлений каждую минуту в тестовых целях)
+
+## Запуск проекта
+
+### Docker Compose (рекомендуемый способ):
+
+Все сервисы запускаются через Docker Compose:
+
+```bash
+docker-compose up -d
+```
+
+Остановка:
+```bash
+docker-compose down
+```
+
+Просмотр логов:
+```bash
+docker-compose logs -f
+```
+
+База данных `antichaos.db` создаётся и сохраняется в корне проекта.
+
+### Локальный запуск (без Docker):
+
+#### Backend:
+```bash
+cd backend
+uv sync
+uvicorn main:app --reload --host 0.0.0.0 --port 8000
+```
+
+#### Frontend:
+# dev server
+```bash
+cd frontend
+npm install
+npm run dev
+```
+# build
+```bash
+cd frontend
+npm run build
+```
+# start server
+```bash
+cd frontend
+npm run start
+```
+
+#### Bot:
+```bash
+uv run python bot/bot.py
+```
+
+## Конфигурация
+
+Все настройки находятся в файле `.env`:
+- `TELEGRAM_BOT_TOKEN` - токен Telegram бота
+- `TELEGRAM_BOT_SECRET_KEY` - секретный ключ для проверки initData
+- `DATABASE_URL` - URL базы данных
+- `FRONTEND_URL` - URL фронтенда
+- `BACKEND_URL` - URL backend API
+- `ADMINS` - список telegram_id админов через запятую (например: `ADMINS=123456789,987654321`)
+
+## Админ-панель
+
+Админы, указанные в переменной `ADMINS` в `.env`, имеют доступ к дополнительным функциям:
+- В настройках отображается раздел "Админ-панель" с кнопкой "База вопросов"
+- Доступ к экрану управления базой вопросов (Экран 22)
+- Возможность просматривать, добавлять, редактировать и удалять вопросы по темам (сферам)
+- Фильтрация вопросов по сферам жизни
+- Управление активностью вопросов (включение/выключение)
+

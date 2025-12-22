@@ -1,0 +1,23 @@
+{
+  "name": "antichaos-telegram-app",
+  "version": "1.0.0",
+  "description": "Telegram Mini App АнтиChaos",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --config vite.config.js",
+    "build": "vite build --config vite.config.js",
+    "preview": "vite preview --config vite.config.js",
+    "start": "vite preview --config vite.config.js --port 5173 --host 0.0.0.0"
+  },
+  "dependencies": {
+    "chart.js": "^4.4.0",
+    "react": "^18.2.0",
+    "react-chartjs-2": "^5.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.20.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.2.1",
+    "vite": "^7.3.0"
+  }
+}

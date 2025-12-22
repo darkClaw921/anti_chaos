@@ -1,0 +1,273 @@
+/* Стили компонентов */
+
+/* Кнопка оценки */
+.rating-button {
+  width: 30.7px;
+  height: 40px;
+  border: 1px solid #d9d9d9;
+  background-color: #ffffff;
+  border-radius: 2px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.rating-button:hover {
+  border-color: #1890ff;
+  color: #1890ff;
+}
+
+.rating-button.active {
+  background-color: #1890ff;
+  border-color: #1890ff;
+  color: #ffffff;
+}
+
+.rating-group {
+  display: flex;
+  gap: 4px;
+  margin-top: 12px;
+}
+
+/* Сфера жизни */
+.sphere-card {
+  width: 120px;
+  height: 120px;
+  border: 1px solid #d9d9d9;
+  border-radius: 2px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.sphere-card:hover {
+  border-color: #1890ff;
+}
+
+.sphere-card.selected {
+  border-color: #1890ff;
+  background-color: rgba(24, 144, 255, 0.1);
+}
+
+.sphere-card .sphere-name {
+  font-size: 16px;
+  margin-top: 8px;
+}
+
+.sphere-card .sphere-rating {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  font-size: 14px;
+  color: rgba(0, 0, 0, 0.65);
+}
+
+.sphere-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 17px;
+  max-width: 257px;
+  margin: 0 auto;
+}
+
+/* Чекбокс */
+.checkbox {
+  width: 16px;
+  height: 16px;
+  border: 1px solid #d9d9d9;
+  border-radius: 2px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.checkbox.checked {
+  background-color: #1890ff;
+  border-color: #1890ff;
+}
+
+.checkbox.checked::after {
+  content: '✓';
+  color: #ffffff;
+  font-size: 12px;
+}
+
+/* Меню */
+.menu-item {
+  width: 100%;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.menu-item:hover {
+  background-color: rgba(0, 0, 0, 0.04);
+}
+
+.menu-item .menu-icon {
+  width: 28px;
+  height: 28px;
+  margin-right: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.menu-item .menu-text {
+  flex: 1;
+  font-size: 16px;
+}
+
+/* Прогресс слайдер */
+.progress-slider {
+  width: 100%;
+  height: 4px;
+  background-color: #f0f0f0;
+  border-radius: 2px;
+  position: relative;
+  margin-top: 6px;
+}
+
+.progress-slider-fill {
+  height: 100%;
+  background-color: #1890ff;
+  border-radius: 2px;
+  transition: width 0.3s;
+}
+
+.progress-item {
+  margin-bottom: 24px;
+}
+
+.progress-item-label {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  font-size: 14px;
+}
+
+/* График паутинки */
+.spider-chart-container {
+  width: 100%;
+  max-width: 343px;
+  height: 320px;
+  margin: 0 auto;
+  position: relative;
+}
+
+/* Темная тема для компонентов */
+.dark-theme .sphere-card {
+  background-color: #1f1f1f;
+  border-color: #434343;
+}
+
+.dark-theme .sphere-card:hover {
+  border-color: #1890ff;
+}
+
+.dark-theme .sphere-card.selected {
+  background-color: rgba(24, 144, 255, 0.2);
+  border-color: #1890ff;
+}
+
+.dark-theme .menu-item:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+.dark-theme .progress-slider {
+  background-color: #434343;
+}
+
+.dark-theme p {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.dark-theme .rating-button {
+  background-color: #1f1f1f;
+  border-color: #434343;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.dark-theme .rating-button:hover {
+  border-color: #1890ff;
+  color: #1890ff;
+}
+
+.dark-theme .rating-button.active {
+  background-color: #1890ff;
+  border-color: #1890ff;
+  color: #ffffff;
+}
+
+.dark-theme .checkbox {
+  border-color: #434343;
+  background-color: #1f1f1f;
+}
+
+.dark-theme .checkbox.checked {
+  background-color: #1890ff;
+  border-color: #1890ff;
+}
+
+.dark-theme .menu-item .menu-text {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+/* Toggle Switch */
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 22px;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #d9d9d9;
+  transition: 0.3s;
+  border-radius: 22px;
+}
+
+.toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 2px;
+  bottom: 2px;
+  background-color: white;
+  transition: 0.3s;
+  border-radius: 50%;
+}
+
+.toggle-switch input:checked + .toggle-slider {
+  background-color: #1890ff;
+}
+
+.toggle-switch input:checked + .toggle-slider:before {
+  transform: translateX(22px);
+}
+
