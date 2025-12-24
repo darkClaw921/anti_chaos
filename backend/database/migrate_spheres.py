@@ -85,9 +85,9 @@ async def migrate():
                     ('other', 'Другое', '#eb2f96'),
                     # Платные сферы
                     ('self_realization', 'Само-реализация (платно)', '#9c27b0'),
-                    ('living_conditions', 'Условия жизни (платно)', '#607d8b'),
-                    ('personal_growth', 'Личностный рост (платно)', '#e91e63'),
-                    ('creativity', 'Творчество (платно)', '#ff9800')
+                    ('living_conditions', 'Условия жизни (платно)', '#9c27b0'),
+                    # ('personal_growth', 'Личностный рост (платно)', '#e91e63'),
+                    # ('creativity', 'Творчество (платно)', '#ff9800')
                 ]
                 
                 now = datetime.utcnow().isoformat()
@@ -113,9 +113,9 @@ async def migrate():
                 # Проверяем и добавляем платные сферы, если их нет
                 paid_spheres = [
                     ('self_realization', 'Само-реализация (платно)', '#9c27b0'),
-                    ('living_conditions', 'Условия жизни (платно)', '#607d8b'),
-                    ('personal_growth', 'Личностный рост (платно)', '#e91e63'),
-                    ('creativity', 'Творчество (платно)', '#ff9800')
+                    ('living_conditions', 'Условия жизни (платно)', '#9c27b0'),
+                    # ('personal_growth', 'Личностный рост (платно)', '#e91e63'),
+                    # ('creativity', 'Творчество (платно)', '#ff9800')
                 ]
                 
                 now = datetime.utcnow().isoformat()
