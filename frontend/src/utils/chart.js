@@ -6,11 +6,25 @@ import { SPHERES, SPHERE_KEYS, SPHERE_COLORS } from './constants'
 
 export const prepareSpiderChartData = (ratings, spheres = null) => {
   // Если передан список сфер из API, используем его, иначе используем константы
-  const sphereKeys = spheres ? spheres.map(s => s.key) : SPHERE_KEYS
+  const allSphereKeys = spheres ? spheres.map(s => s.key) : SPHERE_KEYS
   const sphereNames = spheres ? spheres.reduce((acc, s) => {
     acc[s.key] = s.name
     return acc
   }, {}) : SPHERES
+  
+  // Фильтруем сферы: исключаем платные сферы без оценок
+  const sphereKeys = allSphereKeys.filter(key => {
+    const sphereName = sphereNames[key] || key
+    const isPaid = sphereName.includes('(платно)')
+    const hasRating = ratings[key] !== undefined && ratings[key] !== null
+    
+    // Если это платная сфера и нет оценки, исключаем её
+    if (isPaid && !hasRating) {
+      return false
+    }
+    
+    return true
+  })
   
   const labels = sphereKeys.map(key => sphereNames[key] || key)
   const data = sphereKeys.map(key => {
@@ -39,11 +53,26 @@ export const prepareSpiderChartData = (ratings, spheres = null) => {
 
 export const prepareSpiderChartDataComparison = (initialRatings, currentRatings, spheres = null) => {
   // Если передан список сфер из API, используем его, иначе используем константы
-  const sphereKeys = spheres ? spheres.map(s => s.key) : SPHERE_KEYS
+  const allSphereKeys = spheres ? spheres.map(s => s.key) : SPHERE_KEYS
   const sphereNames = spheres ? spheres.reduce((acc, s) => {
     acc[s.key] = s.name
     return acc
   }, {}) : SPHERES
+  
+  // Фильтруем сферы: исключаем платные сферы без оценок (проверяем оба набора оценок)
+  const sphereKeys = allSphereKeys.filter(key => {
+    const sphereName = sphereNames[key] || key
+    const isPaid = sphereName.includes('(платно)')
+    const hasInitialRating = initialRatings[key] !== undefined && initialRatings[key] !== null
+    const hasCurrentRating = currentRatings[key] !== undefined && currentRatings[key] !== null
+    
+    // Если это платная сфера и нет оценок ни в начальных, ни в текущих, исключаем её
+    if (isPaid && !hasInitialRating && !hasCurrentRating) {
+      return false
+    }
+    
+    return true
+  })
   
   const labels = sphereKeys.map(key => sphereNames[key] || key)
   const initialData = sphereKeys.map(key => {

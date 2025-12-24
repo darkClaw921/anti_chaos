@@ -26,7 +26,19 @@ const SphereRating = () => {
   const loadSpheres = async () => {
     try {
       const data = await api.getAllSpheres()
-      setSpheres(data)
+      // Сортируем сферы: сначала обычные, потом платные в конце
+      const sortedSpheres = [...data].sort((a, b) => {
+        const isPaidA = a.name.includes('(платно)')
+        const isPaidB = b.name.includes('(платно)')
+        
+        // Платные сферы всегда идут в конец
+        if (isPaidA && !isPaidB) return 1
+        if (!isPaidA && isPaidB) return -1
+        
+        // Если обе платные или обе обычные, сохраняем исходный порядок
+        return 0
+      })
+      setSpheres(sortedSpheres)
     } catch (error) {
       console.error('Ошибка загрузки сфер:', error)
       // Используем константы как fallback
@@ -38,7 +50,12 @@ const SphereRating = () => {
     }
   }
 
-  const handleRatingClick = (sphere, rating) => {
+  const handleRatingClick = (sphere, rating, isPaid) => {
+    // Блокируем оценку платных сфер
+    if (isPaid) {
+      return
+    }
+    
     setRatings(prev => ({
       ...prev,
       [sphere]: rating
@@ -46,9 +63,14 @@ const SphereRating = () => {
   }
 
   const handleContinue = async () => {
-    // Проверяем, что все сферы оценены
+    // Проверяем, что все обычные (не платные) сферы оценены
     const sphereKeys = spheres.length > 0 ? spheres.map(s => s.key) : SPHERE_KEYS
-    const allRated = sphereKeys.every(sphere => ratings[sphere] !== undefined)
+    // Фильтруем платные сферы из проверки
+    const regularSpheres = sphereKeys.filter(key => {
+      const sphere = spheres.find(s => s.key === key) || { key, name: SPHERES[key] || '' }
+      return !sphere.name.includes('(платно)')
+    })
+    const allRated = regularSpheres.every(sphere => ratings[sphere] !== undefined)
     
     if (!allRated) {
       alert('Пожалуйста, оцените все сферы')
@@ -80,17 +102,20 @@ const SphereRating = () => {
           {(spheres.length > 0 ? spheres : SPHERE_KEYS.map(key => ({ key, name: SPHERES[key] }))).map(sphere => {
             const sphereKey = typeof sphere === 'string' ? sphere : sphere.key
             const sphereName = typeof sphere === 'string' ? SPHERES[sphere] : sphere.name
+            const isPaid = sphereName.includes('(платно)')
             return (
-              <div key={sphereKey} style={{ marginBottom: '20px' }}>
-                <div style={{ marginBottom: '12px', fontSize: '16px' }}>
+              <div key={sphereKey} style={{ marginBottom: '20px', position: 'relative' }}>
+                <div style={{ marginBottom: '12px', fontSize: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                   {sphereName}
+                  {isPaid && <span style={{ fontSize: '16px' }}>🔒</span>}
                 </div>
                 <div className="rating-group">
                   {RATING_SCALE.map(rating => (
                     <button
                       key={rating}
-                      className={`rating-button ${ratings[sphereKey] === rating ? 'active' : ''}`}
-                      onClick={() => handleRatingClick(sphereKey, rating)}
+                      className={`rating-button ${ratings[sphereKey] === rating ? 'active' : ''} ${isPaid ? 'disabled' : ''}`}
+                      onClick={() => handleRatingClick(sphereKey, rating, isPaid)}
+                      disabled={isPaid}
                     >
                       {rating}
                     </button>

@@ -39,8 +39,16 @@ const SphereSelection = () => {
       })
       setRatings(ratingsMap)
       
-      // Сортируем сферы по оценкам по возрастанию (сферы без оценок в конце)
+      // Сортируем сферы: сначала обычные по оценкам по возрастанию, потом платные в конце
       const sortedSpheres = [...spheresData].sort((a, b) => {
+        const isPaidA = a.name.includes('(платно)')
+        const isPaidB = b.name.includes('(платно)')
+        
+        // Платные сферы всегда идут в конец
+        if (isPaidA && !isPaidB) return 1
+        if (!isPaidA && isPaidB) return -1
+        
+        // Если обе платные или обе обычные, сортируем по оценкам
         const ratingA = ratingsMap[a.key] || 0
         const ratingB = ratingsMap[b.key] || 0
         
@@ -49,7 +57,7 @@ const SphereSelection = () => {
           return 0
         }
         
-        // Сферы без оценок идут в конец
+        // Сферы без оценок идут в конец (но после платных)
         if (ratingA === 0) return 1
         if (ratingB === 0) return -1
         
@@ -70,6 +78,12 @@ const SphereSelection = () => {
   }
 
   const handleSphereClick = (sphere) => {
+    // Блокируем выбор платных сфер
+    const sphereData = spheres.find(s => s.key === sphere)
+    if (sphereData && sphereData.name.includes('(платно)')) {
+      return
+    }
+    
     setSelectedSpheres(prev => {
       if (prev.includes(sphere)) {
         return prev.filter(s => s !== sphere)
@@ -114,15 +128,26 @@ const SphereSelection = () => {
           {spheres.map(sphere => {
             const isSelected = selectedSpheres.includes(sphere.key)
             const rating = ratings[sphere.key]
+            const isPaid = sphere.name.includes('(платно)')
             
             return (
               <div
                 key={sphere.key}
-                className={`sphere-card ${isSelected ? 'selected' : ''}`}
+                className={`sphere-card ${isSelected ? 'selected' : ''} ${isPaid ? 'locked' : ''}`}
                 onClick={() => handleSphereClick(sphere.key)}
               >
                 {rating && (
                   <span className="sphere-rating">{rating}/10</span>
+                )}
+                {isPaid && (
+                  <span style={{ 
+                    position: 'absolute', 
+                    top: '10px', 
+                    left: '10px', 
+                    fontSize: '16px' 
+                  }}>
+                    🔒
+                  </span>
                 )}
                 <div className="sphere-name">{sphere.name}</div>
                 <div 

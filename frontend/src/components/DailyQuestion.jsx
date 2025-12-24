@@ -121,15 +121,15 @@ const DailyQuestion = () => {
     
     // Если выбраны 2 сферы и это 2-е нажатие, переходим на 2-ю сферу
     let newSphereIndex = currentSphereIndex
-    if (focusSpheres.length === 2 && newSkipCount >= 2 && currentSphereIndex === 0) {
+    if (focusSpheres.length === 2 && newSkipCount === 2 && currentSphereIndex === 0) {
       newSphereIndex = 1
       setCurrentSphereIndex(1)
       // Сохраняем текущую сферу в localStorage для сохранения состояния
       localStorage.setItem(`current_sphere_index_${today}`, '1')
     }
     
-    // Если выбрана 1 сфера и это 2-е нажатие, больше не показываем кнопку "Пропустить"
-    // Кнопка "Пропустить все вопросы сегодня" уже будет показана
+    // После 2 пропусков кнопка "Пропустить" будет скрыта независимо от количества сфер
+    // Кнопка "Пропустить все вопросы сегодня" будет показана как альтернатива
     
     await loadQuestion(newSphereIndex)
   }
@@ -237,9 +237,9 @@ const DailyQuestion = () => {
           marginTop: '24px'
         }}>
           {/* Кнопка Пропустить */}
-          {/* Если выбрана 1 сфера: скрывается после 2 нажатий */}
-          {/* Если выбраны 2 сферы: всегда видна, после 2 нажатий переходит на 2-ю сферу */}
-          {(focusSpheres.length === 1 ? skipCount < 2 : true) && (
+          {/* Скрывается после 2 пропусков независимо от количества сфер */}
+          {/* После 2 пропусков пользователь должен ответить или использовать "Пропустить все вопросы сегодня" */}
+          {skipCount < 2 && (
             <Button 
               onClick={handleSkip} 
               type="secondary"

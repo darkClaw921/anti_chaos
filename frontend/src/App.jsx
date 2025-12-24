@@ -13,6 +13,10 @@ import DailySummary from './components/DailySummary'
 import Progress from './components/Progress'
 import WeeklySummary from './components/WeeklySummary'
 import MonthlyReport from './components/MonthlyReport'
+import ImprovementPlanPresale from './components/ImprovementPlanPresale'
+import Subscription from './components/Subscription'
+import SubscriptionSuccess from './components/SubscriptionSuccess'
+import SituationAnalysis from './components/SituationAnalysis'
 import Menu from './components/Menu'
 import Account from './components/Account'
 import Settings from './components/Settings'
@@ -40,6 +44,10 @@ function App() {
           <Route path="progress" element={<Progress />} />
           <Route path="weekly" element={<WeeklySummary />} />
           <Route path="monthly" element={<MonthlyReport />} />
+          <Route path="improvement-plan-presale" element={<ImprovementPlanPresale />} />
+          <Route path="subscription" element={<Subscription />} />
+          <Route path="subscription-success" element={<SubscriptionSuccess />} />
+          <Route path="situation-analysis" element={<SituationAnalysis />} />
           <Route path="menu" element={<Menu />} />
           <Route path="account" element={<Account />} />
           <Route path="settings" element={<Settings />} />

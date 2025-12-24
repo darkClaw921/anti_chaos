@@ -1,8 +1,9 @@
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker, AsyncEngine
 from sqlalchemy.orm import declarative_base
 from backend.config import settings
 
-engine = create_async_engine(
+# Создаем engine с нормализованным путем (путь обрабатывается в config.py при создании settings)
+engine: AsyncEngine = create_async_engine(
     settings.database_url,
     echo=settings.environment == "development",
     future=True

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Header
+from fastapi import APIRouter, Depends, HTTPException, Header, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional
 import random
@@ -40,7 +40,25 @@ class UserProfileUpdate(BaseModel):
     birth_date: Optional[str] = None  # Формат: YYYY-MM-DD или DD.MM.YYYY
 
 
+def get_client_ip(request: Request) -> str:
+    """Получает IP адрес клиента из заголовков запроса или напрямую из request"""
+    # Приоритет: X-Real-IP -> X-Forwarded-For -> request.client.host
+    real_ip = request.headers.get("X-Real-IP")
+    if real_ip:
+        return real_ip.split(",")[0].strip()
+    
+    forwarded_for = request.headers.get("X-Forwarded-For")
+    if forwarded_for:
+        return forwarded_for.split(",")[0].strip()
+    
+    if request.client:
+        return request.client.host
+    
+    return "unknown"
+
+
 async def get_current_user(
+    request: Request,
     init_data: Optional[str] = Header(None, alias="X-Telegram-Init-Data"),
     guest_user_id: Optional[str] = Header(None, alias="X-Guest-User-Id"),
     db: AsyncSession = Depends(get_db)
@@ -75,17 +93,16 @@ async def get_current_user(
         except (ValueError, TypeError):
             pass
     
-    # Создаем нового гостевого пользователя
-    # Используем отрицательный telegram_id для гостей
-    guest_telegram_id = -random.randint(1000000, 9999999)
+    # Получаем IP адрес клиента
+    ip_address = get_client_ip(request)
     
-    user = await crud.create_user(
-        db,
-        guest_telegram_id,
-        username=f"guest_{guest_telegram_id}",
-        first_name="Гость",
-        last_name=None
-    )
+    # Ищем существующего гостя по IP адресу
+    user = await crud.get_user_by_ip(db, ip_address)
+    if user:
+        return user
+    
+    # Создаем нового гостевого пользователя с тестовыми данными
+    user = await crud.create_guest_user_with_test_data(db, ip_address)
     
     return user
 
@@ -219,4 +236,21 @@ async def delete_account(
     if not success:
         raise HTTPException(status_code=404, detail="User not found")
     return {"message": "Account deleted successfully"}
+
+
+@router.post("/me/generate-test-data")
+async def generate_test_data(
+    user = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Генерирует тестовые данные для гостевого пользователя"""
+    # Проверяем, что пользователь является гостем (telegram_id < 0)
+    if user.telegram_id >= 0:
+        raise HTTPException(status_code=403, detail="This endpoint is only available for guest users")
+    
+    success = await crud.generate_test_data_for_user(db, user.id)
+    if not success:
+        raise HTTPException(status_code=500, detail="Failed to generate test data")
+    
+    return {"message": "Test data generated successfully"}
 

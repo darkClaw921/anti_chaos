@@ -4,6 +4,7 @@ import Button from './Button'
 import { initTelegramWebApp, setBackButton, hideBackButton } from '../services/telegram'
 import { api } from '../services/api'
 import { SPHERES, SPHERE_KEYS } from '../utils/constants'
+import { useTheme } from '../utils/useTheme'
 import '../styles/main.css'
 import '../styles/components.css'
 
@@ -16,6 +17,7 @@ const ChangeFocusSpheres = () => {
   const [saving, setSaving] = useState(false)
   const [canChange, setCanChange] = useState(true)
   const [checkMessage, setCheckMessage] = useState('')
+  const isDark = useTheme()
 
   useEffect(() => {
     initTelegramWebApp()
@@ -47,11 +49,18 @@ const ChangeFocusSpheres = () => {
       setCanChange(canChangeData.can_change)
       setCheckMessage(canChangeData.message || '')
       
-      // Сортируем сферы по оценкам по возрастанию (сферы без оценок в конце)
+      // Сортируем сферы: сначала обычные с оценками (по возрастанию), потом платные, потом без оценок
       const sortedSpheres = [...spheresData].sort((a, b) => {
         const ratingA = ratingsMap[a.key] || 0
         const ratingB = ratingsMap[b.key] || 0
+        const isPaidA = a.name.includes('(платно)')
+        const isPaidB = b.name.includes('(платно)')
         
+        // Платные сферы всегда идут после обычных
+        if (isPaidA && !isPaidB) return 1
+        if (!isPaidA && isPaidB) return -1
+        
+        // Если обе платные или обе обычные, сортируем по оценкам
         // Если обе сферы без оценок, сохраняем исходный порядок
         if (ratingA === 0 && ratingB === 0) {
           return 0
@@ -159,18 +168,30 @@ const ChangeFocusSpheres = () => {
           {spheres.map(sphere => {
             const isSelected = selectedSpheres.includes(sphere.key)
             const rating = ratings[sphere.key]
+            const isPaid = sphere.name.includes('(платно)')
             
             return (
               <div
                 key={sphere.key}
                 className={`sphere-card ${isSelected ? 'selected' : ''}`}
                 onClick={() => handleSphereClick(sphere.key)}
-                style={{ cursor: canChange ? 'pointer' : 'not-allowed' }}
+                style={{ 
+                  cursor: canChange ? 'pointer' : 'not-allowed',
+                  backgroundColor: isPaid ? (isDark ? `${sphere.color}20` : `${sphere.color}15`) : undefined
+                }}
               >
                 {rating && (
                   <span className="sphere-rating">{rating}/10</span>
                 )}
-                <div className="sphere-name">{sphere.name}</div>
+                <div 
+                  className="sphere-name" 
+                  style={{ 
+                    textAlign: 'center',
+                    color: isPaid ? sphere.color : undefined
+                  }}
+                >
+                  {sphere.name}
+                </div>
                 <div 
                   className={`checkbox ${isSelected ? 'checked' : ''}`}
                   style={{ marginTop: '8px' }}

@@ -16,6 +16,7 @@ class User(Base):
     gender = Column(String, nullable=True)  # male, female
     birth_date = Column(DateTime, nullable=True)  # Дата рождения
     created_at = Column(DateTime, default=datetime.utcnow)
+    ip_address = Column(String, nullable=True, index=True)  # IP адрес для гостевых пользователей
     
     spheres = relationship("UserSphere", back_populates="user", cascade="all, delete-orphan")
     answers = relationship("Answer", back_populates="user", cascade="all, delete-orphan")

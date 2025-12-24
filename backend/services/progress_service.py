@@ -89,8 +89,6 @@ async def get_monthly_report(db: AsyncSession, user_id: int) -> Dict:
     """
     Получает месячный отчёт
     """
-    progress = await calculate_progress(db, user_id, days=30)
-    
     # Получаем фокус-сферы
     focus_spheres = await crud.get_user_focus_spheres(db, user_id)
     focus_sphere_names = [fs.sphere for fs in focus_spheres]
@@ -112,12 +110,42 @@ async def get_monthly_report(db: AsyncSession, user_id: int) -> Dict:
                 latest_before_period[sphere.sphere] = sphere
         initial_ratings = {s.sphere: s.rating for s in latest_before_period.values()}
     
+    # Получаем текущие оценки
+    latest_spheres = await crud.get_latest_user_spheres(db, user_id)
+    current_ratings = {s.sphere: s.rating for s in latest_spheres}
+    
+    # Определяем выросшие и просевшие сферы на основе сравнения начальных и текущих оценок
+    grown_spheres = []
+    declined_spheres = []
+    
+    for sphere_name, current_rating in current_ratings.items():
+        if sphere_name in initial_ratings:
+            initial_rating = initial_ratings[sphere_name]
+            if current_rating > initial_rating:
+                grown_spheres.append({
+                    'sphere': sphere_name,
+                    'growth': current_rating - initial_rating
+                })
+            elif current_rating < initial_rating:
+                declined_spheres.append({
+                    'sphere': sphere_name,
+                    'decline': initial_rating - current_rating
+                })
+    
+    # Создаем объект progress с правильными данными для месячного отчета
+    progress = {
+        'current_ratings': current_ratings,
+        'grown_spheres': grown_spheres,
+        'declined_spheres': declined_spheres,
+        'period_days': 30
+    }
+    
     return {
         'progress': progress,
         'focus_spheres': focus_sphere_names,
         'answers_count': len(answers),
         'initial_ratings': initial_ratings,
-        'current_ratings': progress['current_ratings'],
+        'current_ratings': current_ratings,
         'month_start': (datetime.utcnow() - timedelta(days=30)).date(),
         'month_end': datetime.utcnow().date()
     }

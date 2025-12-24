@@ -164,63 +164,95 @@ const MonthlyReport = () => {
               </div>
             )}
             
-            {/* Выросшие сферы */}
-            {report.progress.grown_spheres.length > 0 && (
+            {/* Просевшие и выросшие сферы */}
+            {report.progress && (
               <div style={{ marginBottom: '32px' }}>
-                <h3 style={{ 
-                  fontSize: '18px', 
-                  fontWeight: 'bold',
-                  marginBottom: '16px',
-                  color: isDark ? 'rgba(255, 255, 255, 0.85)' : 'rgba(0, 0, 0, 0.85)'
+                {/* Контейнер для блоков Выросла и Просела */}
+                <div style={{ 
+                  display: 'flex', 
+                  gap: '16px',
+                  marginBottom: '24px',
+                  flexWrap: 'wrap'
                 }}>
-                  Выросла
-                </h3>
-                {report.progress.grown_spheres.map(item => (
-                  <div key={item.sphere} className="progress-item" style={{ marginBottom: '16px' }}>
-                    <div className="progress-item-label" style={{ marginBottom: '8px' }}>
-                      <span style={{ fontSize: '14px' }}>{getSphereName(item.sphere)}</span>
+                  {/* Выросшие сферы */}
+                  {report.progress.grown_spheres && report.progress.grown_spheres.length > 0 && (
+                    <div style={{ 
+                      flex: '1',
+                      minWidth: '150px'
+                    }}>
+                      <h3 style={{ 
+                        fontSize: '18px', 
+                        fontWeight: 'bold',
+                        marginBottom: '16px',
+                        color: isDark ? 'rgba(255, 255, 255, 0.85)' : 'rgba(0, 0, 0, 0.85)'
+                      }}>
+                        Выросла
+                      </h3>
+                      {report.progress.grown_spheres.map(item => (
+                        <div key={item.sphere} className="progress-item" style={{ marginBottom: '16px' }}>
+                          <div className="progress-item-label" style={{ marginBottom: '8px' }}>
+                            <span style={{ fontSize: '14px' }}>{getSphereName(item.sphere)}</span>
+                          </div>
+                          <div className="progress-slider">
+                            <div 
+                              className="progress-slider-fill progress-slider-fill-green" 
+                              style={{ 
+                                width: `${Math.min((item.growth / 10) * 100, 100)}%`,
+                                backgroundColor: '#52c41a'
+                              }}
+                            />
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                    <div className="progress-slider">
-                      <div 
-                        className="progress-slider-fill progress-slider-fill-green" 
-                        style={{ 
-                          width: `${Math.min((item.growth / 10) * 100, 100)}%`,
-                          backgroundColor: '#52c41a'
-                        }}
-                      />
+                  )}
+                  
+                  {/* Просевшие сферы */}
+                  {report.progress.declined_spheres && report.progress.declined_spheres.length > 0 && (
+                    <div style={{ 
+                      flex: '1',
+                      minWidth: '150px'
+                    }}>
+                      <h3 style={{ 
+                        fontSize: '18px', 
+                        fontWeight: 'bold',
+                        marginBottom: '16px',
+                        color: isDark ? 'rgba(255, 255, 255, 0.85)' : 'rgba(0, 0, 0, 0.85)'
+                      }}>
+                        Просела
+                      </h3>
+                      {report.progress.declined_spheres.map(item => (
+                        <div key={item.sphere} className="progress-item" style={{ marginBottom: '16px' }}>
+                          <div className="progress-item-label" style={{ marginBottom: '8px' }}>
+                            <span style={{ fontSize: '14px' }}>{getSphereName(item.sphere)}</span>
+                          </div>
+                          <div className="progress-slider">
+                            <div 
+                              className="progress-slider-fill progress-slider-fill-red" 
+                              style={{ 
+                                width: `${Math.min((item.decline / 10) * 100, 100)}%`,
+                                backgroundColor: '#ff4d4f'
+                              }}
+                            />
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
-            
-            {/* Просевшие сферы */}
-            {report.progress.declined_spheres.length > 0 && (
-              <div style={{ marginBottom: '32px' }}>
-                <h3 style={{ 
-                  fontSize: '18px', 
-                  fontWeight: 'bold',
-                  marginBottom: '16px',
-                  color: isDark ? 'rgba(255, 255, 255, 0.85)' : 'rgba(0, 0, 0, 0.85)'
-                }}>
-                  Просела
-                </h3>
-                {report.progress.declined_spheres.map(item => (
-                  <div key={item.sphere} className="progress-item" style={{ marginBottom: '16px' }}>
-                    <div className="progress-item-label" style={{ marginBottom: '8px' }}>
-                      <span style={{ fontSize: '14px' }}>{getSphereName(item.sphere)}</span>
-                    </div>
-                    <div className="progress-slider">
-                      <div 
-                        className="progress-slider-fill progress-slider-fill-red" 
-                        style={{ 
-                          width: `${Math.min((item.decline / 10) * 100, 100)}%`,
-                          backgroundColor: '#ff4d4f'
-                        }}
-                      />
-                    </div>
-                  </div>
-                ))}
+                  )}
+                </div>
+                
+                {/* Текст под блоками выросших/просевших сфер */}
+                {report.focus_spheres && report.focus_spheres.length > 0 && (
+                  <p style={{ 
+                    fontSize: '14px', 
+                    lineHeight: '1.6',
+                    color: isDark ? 'rgba(255, 255, 255, 0.65)' : 'rgba(0, 0, 0, 0.65)',
+                    marginTop: '16px'
+                  }}>
+                    Основа для жизни: {getSphereName(report.focus_spheres[0])} — это фундамент для благополучной жизни, 
+                    позволяющий развиваться, работать и наслаждаться повседневными радостями.
+                  </p>
+                )}
               </div>
             )}
           </>
@@ -230,6 +262,9 @@ const MonthlyReport = () => {
       <div className="btn-group" style={{ marginTop: 'auto', paddingTop: '24px' }}>
         <Button onClick={handleShare} type="primary" style={{ width: '100%' }}>
           Поделиться результатом
+        </Button>
+        <Button onClick={() => navigate('/improvement-plan-presale')} type="secondary" style={{ width: '100%' }}>
+          Пошаговый план улучшения (платно)
         </Button>
       </div>
     </div>

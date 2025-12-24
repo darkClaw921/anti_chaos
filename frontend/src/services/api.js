@@ -176,6 +176,14 @@ export const api = {
     return handleResponse(response)
   },
   
+  generateTestData: async () => {
+    const response = await fetch(buildApiUrl('api/users/me/generate-test-data'), {
+      method: 'POST',
+      headers: getHeaders()
+    })
+    return handleResponse(response)
+  },
+  
   // Questions
   getDailyQuestion: async (currentSphere = null) => {
     const url = currentSphere 
@@ -384,7 +392,7 @@ export const api = {
   },
   
   // Admin Spheres
-  getAllSpheres: async () => {
+  getAllSpheresAdmin: async () => {
     const response = await fetch(buildApiUrl('api/spheres/admin/all'), {
       headers: getHeaders()
     })

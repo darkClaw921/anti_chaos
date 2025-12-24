@@ -23,6 +23,17 @@
   color: #ffffff;
 }
 
+.rating-button.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.rating-button.disabled:hover {
+  border-color: #d9d9d9;
+  color: inherit;
+}
+
 .rating-group {
   display: flex;
   gap: 4px;
@@ -48,6 +59,16 @@
   border-color: #1890ff;
 }
 
+.sphere-card.locked {
+  opacity: 0.6;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.sphere-card.locked:hover {
+  border-color: #d9d9d9;
+}
+
 .sphere-card.selected {
   border-color: #1890ff;
   background-color: rgba(24, 144, 255, 0.1);
@@ -56,6 +77,8 @@
 .sphere-card .sphere-name {
   font-size: 16px;
   margin-top: 8px;
+  text-align: center;
+  width: 100%;
 }
 
 .sphere-card .sphere-rating {
@@ -185,6 +208,15 @@
   border-color: #1890ff;
 }
 
+.dark-theme .sphere-card.locked {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.dark-theme .sphere-card.locked:hover {
+  border-color: #434343;
+}
+
 .dark-theme .sphere-card.selected {
   background-color: rgba(24, 144, 255, 0.2);
   border-color: #1890ff;
@@ -217,6 +249,16 @@
   background-color: #1890ff;
   border-color: #1890ff;
   color: #ffffff;
+}
+
+.dark-theme .rating-button.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.dark-theme .rating-button.disabled:hover {
+  border-color: #434343;
+  color: rgba(255, 255, 255, 0.85);
 }
 
 .dark-theme .checkbox {
@@ -320,5 +362,15 @@
 
 .dark-theme .menu-button svg {
   color: rgba(255, 255, 255, 0.85);
+}
+
+/* Скрытие scrollbar для контейнера тарифов */
+.tariff-scroll-container::-webkit-scrollbar {
+  display: none;
+}
+
+.tariff-scroll-container {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 

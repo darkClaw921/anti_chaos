@@ -2,6 +2,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_, delete
 from typing import List, Optional
 from datetime import datetime, timedelta
+import random
 from backend.database.models import (
     User, UserSphere, Question, Answer, 
     UserFocusSphere, Subscription, UserSettings, Sphere, QuestionSchedule
@@ -19,10 +20,23 @@ async def get_user_by_telegram_id(db: AsyncSession, telegram_id: int) -> Optiona
     return result.scalar_one_or_none()
 
 
+async def get_user_by_ip(db: AsyncSession, ip_address: str) -> Optional[User]:
+    """Находит гостевого пользователя по IP адресу (только пользователи с отрицательным telegram_id)"""
+    result = await db.execute(
+        select(User).where(
+            and_(
+                User.ip_address == ip_address,
+                User.telegram_id < 0  # Только гости
+            )
+        ).order_by(User.created_at.desc()).limit(1)  # Берем самого последнего созданного
+    )
+    return result.scalar_one_or_none()
+
+
 async def create_user(db: AsyncSession, telegram_id: int, username: Optional[str] = None,
                      first_name: Optional[str] = None, last_name: Optional[str] = None,
                      name: Optional[str] = None, gender: Optional[str] = None,
-                     birth_date: Optional[datetime] = None) -> User:
+                     birth_date: Optional[datetime] = None, ip_address: Optional[str] = None) -> User:
     user = User(
         telegram_id=telegram_id,
         username=username,
@@ -30,7 +44,8 @@ async def create_user(db: AsyncSession, telegram_id: int, username: Optional[str
         last_name=last_name,
         name=name,
         gender=gender,
-        birth_date=birth_date
+        birth_date=birth_date,
+        ip_address=ip_address
     )
     db.add(user)
     await db.commit()
@@ -562,6 +577,275 @@ async def delete_sphere(db: AsyncSession, sphere_id: int) -> bool:
     
     # Удаляем саму сферу
     await db.delete(sphere)
+    await db.commit()
+    return True
+
+
+async def create_guest_user_with_test_data(db: AsyncSession, ip_address: str) -> User:
+    """
+    Создает гостевого пользователя с тестовыми данными:
+    - Оценки всех сфер жизни (случайные от 5 до 8)
+    - Выбор 1-2 фокус-сфер (случайно)
+    - Несколько тестовых ответов на вопросы (5-10 ответов за последние 3-7 дней)
+    - Настройки пользователя
+    """
+    # Генерируем случайный отрицательный telegram_id для гостя
+    guest_telegram_id = -random.randint(1000000, 9999999)
+    
+    # Создаем пользователя с IP адресом
+    user = await create_user(
+        db,
+        telegram_id=guest_telegram_id,
+        username=f"guest_{guest_telegram_id}",
+        first_name="Гость",
+        last_name=None,
+        ip_address=ip_address
+    )
+    
+    # Получаем все сферы жизни
+    all_spheres = await get_all_spheres(db)
+    if not all_spheres:
+        return user
+    
+    sphere_keys = [sphere.key for sphere in all_spheres]
+    
+    today = datetime.utcnow()
+    
+    # Создаем старые оценки всех сфер (35-40 дней назад) для "Было" в месячном отчете
+    # Используем более низкие оценки (2-5) для показа прогресса
+    old_date = today - timedelta(days=random.randint(35, 40))
+    for sphere_key in sphere_keys:
+        old_rating = random.randint(2, 5)
+        old_user_sphere = UserSphere(
+            user_id=user.id,
+            sphere=sphere_key,
+            rating=old_rating,
+            date=old_date
+        )
+        db.add(old_user_sphere)
+    
+    # Создаем текущие оценки всех сфер (сегодня) для "Стало" в месячном отчете
+    # Используем более высокие оценки (5-8) для показа прогресса
+    for sphere_key in sphere_keys:
+        rating = random.randint(5, 8)
+        user_sphere = UserSphere(
+            user_id=user.id,
+            sphere=sphere_key,
+            rating=rating,
+            date=today
+        )
+        db.add(user_sphere)
+    
+    # Выбираем 1-2 фокус-сферы (случайно)
+    num_focus_spheres = random.randint(1, 2)
+    focus_spheres = random.sample(sphere_keys, min(num_focus_spheres, len(sphere_keys)))
+    
+    # Создаем фокус-сферы
+    for sphere_key in focus_spheres:
+        focus_sphere = UserFocusSphere(
+            user_id=user.id,
+            sphere=sphere_key,
+            selected_at=today - timedelta(days=random.randint(3, 7))  # Выбраны 3-7 дней назад
+        )
+        db.add(focus_sphere)
+    
+    # Создаем тестовые ответы на вопросы (5-10 ответов за последние 3-7 дней)
+    num_answers = random.randint(5, 10)
+    test_answers = [
+        "Хорошо, спасибо за вопрос",
+        "Сегодня был продуктивный день",
+        "Чувствую себя отлично",
+        "Есть над чем поработать",
+        "Всё идет по плану",
+        "Делаю небольшие шаги вперед",
+        "Стараюсь быть лучше",
+        "Вижу прогресс",
+        "Работаю над собой",
+        "Двигаюсь к цели"
+    ]
+    
+    # Получаем вопросы по фокус-сферам
+    questions_by_sphere = {}
+    for sphere_key in focus_spheres:
+        questions = await get_questions_by_sphere(db, sphere_key, active_only=True)
+        if questions:
+            questions_by_sphere[sphere_key] = questions
+    
+    # Создаем ответы, распределенные по дням
+    days_ago = random.randint(3, 7)
+    answers_created = 0
+    
+    for day_offset in range(days_ago, 0, -1):
+        if answers_created >= num_answers:
+            break
+        
+        answer_date = today - timedelta(days=day_offset)
+        # Создаем 1-2 ответа в день
+        answers_per_day = random.randint(1, 2)
+        
+        for _ in range(answers_per_day):
+            if answers_created >= num_answers:
+                break
+            
+            # Выбираем случайную сферу из фокус-сфер
+            if not questions_by_sphere:
+                break
+            
+            sphere_key = random.choice(list(questions_by_sphere.keys()))
+            questions = questions_by_sphere[sphere_key]
+            
+            if not questions:
+                continue
+            
+            # Выбираем случайный вопрос
+            question = random.choice(questions)
+            
+            # Выбираем случайный ответ
+            answer_text = random.choice(test_answers)
+            
+            answer = Answer(
+                user_id=user.id,
+                question_id=question.id,
+                answer=answer_text,
+                date=answer_date
+            )
+            db.add(answer)
+            answers_created += 1
+    
+    await db.commit()
+    await db.refresh(user)
+    return user
+
+
+async def generate_test_data_for_user(db: AsyncSession, user_id: int) -> bool:
+    """
+    Генерирует тестовые данные для существующего пользователя:
+    - Удаляет существующие оценки сфер, фокус-сферы и ответы
+    - Создает старые оценки всех сфер (35-40 дней назад, оценки 2-5)
+    - Создает текущие оценки всех сфер (сегодня, оценки 5-8)
+    - Выбирает 1-2 фокус-сферы (случайно)
+    - Создает 5-10 тестовых ответов на вопросы за последние 3-7 дней
+    """
+    # Проверяем, что пользователь существует
+    user = await get_user_by_id(db, user_id)
+    if not user:
+        return False
+    
+    # Получаем все сферы жизни
+    all_spheres = await get_all_spheres(db)
+    if not all_spheres:
+        return False
+    
+    sphere_keys = [sphere.key for sphere in all_spheres]
+    
+    # Удаляем существующие данные пользователя
+    await db.execute(delete(UserSphere).where(UserSphere.user_id == user_id))
+    await db.execute(delete(UserFocusSphere).where(UserFocusSphere.user_id == user_id))
+    await db.execute(delete(Answer).where(Answer.user_id == user_id))
+    
+    today = datetime.utcnow()
+    
+    # Создаем старые оценки всех сфер (35-40 дней назад) для "Было" в месячном отчете
+    # Используем более низкие оценки (2-5) для показа прогресса
+    old_date = today - timedelta(days=random.randint(35, 40))
+    for sphere_key in sphere_keys:
+        old_rating = random.randint(2, 5)
+        old_user_sphere = UserSphere(
+            user_id=user.id,
+            sphere=sphere_key,
+            rating=old_rating,
+            date=old_date
+        )
+        db.add(old_user_sphere)
+    
+    # Создаем текущие оценки всех сфер (сегодня) для "Стало" в месячном отчете
+    # Используем более высокие оценки (5-8) для показа прогресса
+    for sphere_key in sphere_keys:
+        rating = random.randint(5, 8)
+        user_sphere = UserSphere(
+            user_id=user.id,
+            sphere=sphere_key,
+            rating=rating,
+            date=today
+        )
+        db.add(user_sphere)
+    
+    # Выбираем 1-2 фокус-сферы (случайно)
+    num_focus_spheres = random.randint(1, 2)
+    focus_spheres = random.sample(sphere_keys, min(num_focus_spheres, len(sphere_keys)))
+    
+    # Создаем фокус-сферы
+    for sphere_key in focus_spheres:
+        focus_sphere = UserFocusSphere(
+            user_id=user.id,
+            sphere=sphere_key,
+            selected_at=today - timedelta(days=random.randint(3, 7))  # Выбраны 3-7 дней назад
+        )
+        db.add(focus_sphere)
+    
+    # Создаем тестовые ответы на вопросы (5-10 ответов за последние 3-7 дней)
+    num_answers = random.randint(5, 10)
+    test_answers = [
+        "Хорошо, спасибо за вопрос",
+        "Сегодня был продуктивный день",
+        "Чувствую себя отлично",
+        "Есть над чем поработать",
+        "Всё идет по плану",
+        "Делаю небольшие шаги вперед",
+        "Стараюсь быть лучше",
+        "Вижу прогресс",
+        "Работаю над собой",
+        "Двигаюсь к цели"
+    ]
+    
+    # Получаем вопросы по фокус-сферам
+    questions_by_sphere = {}
+    for sphere_key in focus_spheres:
+        questions = await get_questions_by_sphere(db, sphere_key, active_only=True)
+        if questions:
+            questions_by_sphere[sphere_key] = questions
+    
+    # Создаем ответы, распределенные по дням
+    days_ago = random.randint(3, 7)
+    answers_created = 0
+    
+    for day_offset in range(days_ago, 0, -1):
+        if answers_created >= num_answers:
+            break
+        
+        answer_date = today - timedelta(days=day_offset)
+        # Создаем 1-2 ответа в день
+        answers_per_day = random.randint(1, 2)
+        
+        for _ in range(answers_per_day):
+            if answers_created >= num_answers:
+                break
+            
+            # Выбираем случайную сферу из фокус-сфер
+            if not questions_by_sphere:
+                break
+            
+            sphere_key = random.choice(list(questions_by_sphere.keys()))
+            questions = questions_by_sphere[sphere_key]
+            
+            if not questions:
+                continue
+            
+            # Выбираем случайный вопрос
+            question = random.choice(questions)
+            
+            # Выбираем случайный ответ
+            answer_text = random.choice(test_answers)
+            
+            answer = Answer(
+                user_id=user.id,
+                question_id=question.id,
+                answer=answer_text,
+                date=answer_date
+            )
+            db.add(answer)
+            answers_created += 1
+    
     await db.commit()
     return True
 

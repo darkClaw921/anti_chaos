@@ -51,7 +51,12 @@ async def migrate():
                 ('money', 'Деньги', '#faad14'),
                 ('energy', 'Энергия', '#fa8c16'),
                 ('career', 'Карьера', '#722ed1'),
-                ('other', 'Другое', '#eb2f96')
+                ('other', 'Другое', '#eb2f96'),
+                # Платные сферы
+                ('self_realization', 'Само-реализация (платно)', '#9c27b0'),
+                ('living_conditions', 'Условия жизни (платно)', '#9c27b0'),
+                # ('personal_growth', 'Личностный рост (платно)', '#e91e63'),
+                # ('creativity', 'Творчество (платно)', '#ff9800')
             ]
             
             now = datetime.utcnow().isoformat()
@@ -77,7 +82,12 @@ async def migrate():
                     ('money', 'Деньги', '#faad14'),
                     ('energy', 'Энергия', '#fa8c16'),
                     ('career', 'Карьера', '#722ed1'),
-                    ('other', 'Другое', '#eb2f96')
+                    ('other', 'Другое', '#eb2f96'),
+                    # Платные сферы
+                    ('self_realization', 'Само-реализация (платно)', '#9c27b0'),
+                    ('living_conditions', 'Условия жизни (платно)', '#607d8b'),
+                    ('personal_growth', 'Личностный рост (платно)', '#e91e63'),
+                    ('creativity', 'Творчество (платно)', '#ff9800')
                 ]
                 
                 now = datetime.utcnow().isoformat()
@@ -100,6 +110,35 @@ async def migrate():
                 print(f"Добавлены начальные сферы")
             else:
                 print(f"Таблица spheres уже содержит {count} записей")
+                # Проверяем и добавляем платные сферы, если их нет
+                paid_spheres = [
+                    ('self_realization', 'Само-реализация (платно)', '#9c27b0'),
+                    ('living_conditions', 'Условия жизни (платно)', '#607d8b'),
+                    ('personal_growth', 'Личностный рост (платно)', '#e91e63'),
+                    ('creativity', 'Творчество (платно)', '#ff9800')
+                ]
+                
+                now = datetime.utcnow().isoformat()
+                added_count = 0
+                for key, name, color in paid_spheres:
+                    check_cursor = await db.execute(
+                        "SELECT id FROM spheres WHERE key = ?",
+                        (key,)
+                    )
+                    exists = await check_cursor.fetchone()
+                    
+                    if not exists:
+                        await db.execute(
+                            """
+                            INSERT INTO spheres (key, name, color, created_at, updated_at)
+                            VALUES (?, ?, ?, ?, ?)
+                            """,
+                            (key, name, color, now, now)
+                        )
+                        added_count += 1
+                
+                if added_count > 0:
+                    print(f"Добавлено {added_count} платных сфер")
         
         await db.commit()
         print("Миграция завершена успешно")
