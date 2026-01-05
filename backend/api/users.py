@@ -40,6 +40,11 @@ class UserProfileUpdate(BaseModel):
     birth_date: Optional[str] = None  # Формат: YYYY-MM-DD или DD.MM.YYYY
 
 
+class SubscriptionUpdate(BaseModel):
+    plan: str  # free, pro, consultation
+    expires_at: Optional[str] = None  # Формат: YYYY-MM-DDTHH:MM:SS или ISO format
+
+
 def get_client_ip(request: Request) -> str:
     """Получает IP адрес клиента из заголовков запроса или напрямую из request"""
     # Приоритет: X-Real-IP -> X-Forwarded-For -> request.client.host
@@ -109,7 +114,18 @@ async def get_current_user(
 
 @router.get("/me", response_model=UserResponse)
 async def get_me(user = Depends(get_current_user)):
-    return user
+    # Конвертируем datetime в строку для created_at
+    return UserResponse(
+        id=user.id,
+        telegram_id=user.telegram_id,
+        username=user.username,
+        first_name=user.first_name,
+        last_name=user.last_name,
+        name=user.name,
+        gender=user.gender,
+        birth_date=user.birth_date.isoformat() if user.birth_date else None,
+        created_at=user.created_at.isoformat() if user.created_at else ""
+    )
 
 
 async def get_admin_user(
@@ -226,6 +242,42 @@ async def get_onboarding_status(
     return {"onboarding_completed": is_completed}
 
 
+@router.get("/onboarding-step")
+async def get_onboarding_step(
+    user = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Определяет текущий этап онбординга пользователя"""
+    # Получаем список всех сфер жизни из базы данных
+    all_spheres_list = await crud.get_all_spheres(db)
+    all_spheres_keys = {sphere.key for sphere in all_spheres_list}
+    
+    # Проверяем, есть ли оценки для всех сфер
+    latest_spheres = await crud.get_latest_user_spheres(db, user.id)
+    rated_spheres = {sphere.sphere for sphere in latest_spheres}
+    
+    # Проверяем, что все сферы оценены
+    all_spheres_rated = all(sphere_key in rated_spheres for sphere_key in all_spheres_keys)
+    
+    # Проверяем, есть ли хотя бы одна фокус-сфера
+    focus_spheres = await crud.get_user_focus_spheres(db, user.id)
+    has_focus_spheres = len(focus_spheres) > 0
+    
+    # Определяем этап онбординга
+    if not all_spheres_rated:
+        step = "rating"  # Нужно оценить все сферы
+    elif not has_focus_spheres:
+        step = "selection"  # Нужно выбрать фокус-сферы
+    else:
+        step = "completed"  # Онбординг завершен
+    
+    return {
+        "step": step,
+        "all_spheres_rated": all_spheres_rated,
+        "has_focus_spheres": has_focus_spheres
+    }
+
+
 @router.delete("/me")
 async def delete_account(
     user = Depends(get_current_user),
@@ -253,4 +305,88 @@ async def generate_test_data(
         raise HTTPException(status_code=500, detail="Failed to generate test data")
     
     return {"message": "Test data generated successfully"}
+
+
+@router.get("/me/subscription")
+async def get_subscription(
+    user = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Получить подписку пользователя"""
+    subscription = await crud.get_user_subscription(db, user.id)
+    
+    if not subscription:
+        # Если подписки нет, возвращаем дефолтную free подписку
+        return {
+            "id": None,
+            "plan": "free",
+            "expires_at": None,
+            "created_at": None,
+            "is_active": False
+        }
+    
+    # Проверяем, активна ли подписка (не истекла)
+    is_active = True
+    if subscription.expires_at:
+        is_active = subscription.expires_at > datetime.utcnow()
+    
+    return {
+        "id": subscription.id,
+        "plan": subscription.plan,
+        "expires_at": subscription.expires_at.isoformat() if subscription.expires_at else None,
+        "created_at": subscription.created_at.isoformat() if subscription.created_at else None,
+        "is_active": is_active
+    }
+
+
+@router.put("/me/subscription")
+async def update_subscription(
+    subscription_data: SubscriptionUpdate,
+    user = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Обновить план подписки пользователя"""
+    expires_at = None
+    if subscription_data.expires_at:
+        try:
+            # Пытаемся распарсить ISO формат (YYYY-MM-DDTHH:MM:SS или YYYY-MM-DDTHH:MM:SS.sssZ)
+            date_str = subscription_data.expires_at
+            if date_str.endswith('Z'):
+                date_str = date_str[:-1] + '+00:00'
+            expires_at = datetime.fromisoformat(date_str)
+        except (ValueError, AttributeError):
+            try:
+                # Пытаемся распарсить другой формат
+                expires_at = datetime.strptime(subscription_data.expires_at, "%Y-%m-%d %H:%M:%S")
+            except ValueError:
+                try:
+                    # Пытаемся распарсить формат без времени
+                    expires_at = datetime.strptime(subscription_data.expires_at, "%Y-%m-%d")
+                except ValueError:
+                    raise HTTPException(status_code=400, detail="Invalid date format for expires_at. Use ISO format (YYYY-MM-DDTHH:MM:SS)")
+    
+    # Валидация плана
+    valid_plans = ['free', 'pro', 'consultation']
+    if subscription_data.plan not in valid_plans:
+        raise HTTPException(status_code=400, detail=f"Invalid plan. Must be one of: {', '.join(valid_plans)}")
+    
+    subscription = await crud.update_subscription(
+        db,
+        user.id,
+        plan=subscription_data.plan,
+        expires_at=expires_at
+    )
+    
+    # Проверяем, активна ли подписка
+    is_active = True
+    if subscription.expires_at:
+        is_active = subscription.expires_at > datetime.utcnow()
+    
+    return {
+        "id": subscription.id,
+        "plan": subscription.plan,
+        "expires_at": subscription.expires_at.isoformat() if subscription.expires_at else None,
+        "created_at": subscription.created_at.isoformat() if subscription.created_at else None,
+        "is_active": is_active
+    }
 

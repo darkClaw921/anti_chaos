@@ -5,6 +5,7 @@ import { initTelegramWebApp, setBackButton, hideBackButton } from '../services/t
 import { api } from '../services/api'
 import { SPHERES, SPHERE_KEYS } from '../utils/constants'
 import { useTheme } from '../utils/useTheme'
+import { useSubscription } from '../utils/useSubscription'
 import '../styles/main.css'
 import '../styles/components.css'
 
@@ -18,6 +19,7 @@ const ChangeFocusSpheres = () => {
   const [canChange, setCanChange] = useState(true)
   const [checkMessage, setCheckMessage] = useState('')
   const isDark = useTheme()
+  const { hasPaidPlan } = useSubscription()
 
   useEffect(() => {
     initTelegramWebApp()
@@ -95,6 +97,13 @@ const ChangeFocusSpheres = () => {
       return
     }
     
+    // Проверяем, является ли сфера платной и есть ли платная подписка
+    const sphereData = spheres.find(s => s.key === sphere)
+    if (sphereData && sphereData.name.includes('(платно)') && !hasPaidPlan) {
+      navigate('/subscription')
+      return
+    }
+    
     setSelectedSpheres(prev => {
       if (prev.includes(sphere)) {
         return prev.filter(s => s !== sphere)
@@ -169,19 +178,31 @@ const ChangeFocusSpheres = () => {
             const isSelected = selectedSpheres.includes(sphere.key)
             const rating = ratings[sphere.key]
             const isPaid = sphere.name.includes('(платно)')
+            const isLocked = isPaid && !hasPaidPlan
             
             return (
               <div
                 key={sphere.key}
-                className={`sphere-card ${isSelected ? 'selected' : ''}`}
+                className={`sphere-card ${isSelected ? 'selected' : ''} ${isLocked ? 'locked' : ''}`}
                 onClick={() => handleSphereClick(sphere.key)}
                 style={{ 
-                  cursor: canChange ? 'pointer' : 'not-allowed',
-                  backgroundColor: isPaid ? (isDark ? `${sphere.color}20` : `${sphere.color}15`) : undefined
+                  cursor: canChange && !isLocked ? 'pointer' : 'not-allowed',
+                  backgroundColor: isPaid ? (isDark ? `${sphere.color}20` : `${sphere.color}15`) : undefined,
+                  opacity: isLocked ? 0.6 : 1
                 }}
               >
                 {rating && (
                   <span className="sphere-rating">{rating}/10</span>
+                )}
+                {isLocked && (
+                  <span style={{ 
+                    position: 'absolute', 
+                    top: '10px', 
+                    left: '10px', 
+                    fontSize: '16px' 
+                  }}>
+                    🔒
+                  </span>
                 )}
                 <div 
                   className="sphere-name" 

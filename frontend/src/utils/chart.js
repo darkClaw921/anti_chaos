@@ -4,6 +4,58 @@
 
 import { SPHERES, SPHERE_KEYS, SPHERE_COLORS } from './constants'
 
+/**
+ * Обрезает текст до указанной длины и добавляет многоточие
+ * @param {string} text - Текст для обрезки
+ * @param {number} maxLength - Максимальная длина
+ * @returns {string} - Обрезанный текст
+ */
+const truncateText = (text, maxLength = 12) => {
+  if (!text || text.length <= maxLength) {
+    return text
+  }
+  return text.substring(0, maxLength) + '...'
+}
+
+/**
+ * Разбивает длинный текст на несколько строк для лучшего отображения
+ * @param {string} text - Текст для разбивки
+ * @param {number} maxLength - Максимальная длина одной строки
+ * @returns {string|string[]} - Текст или массив строк
+ */
+const wrapText = (text, maxLength = 10) => {
+  if (!text || text.length <= maxLength) {
+    return text
+  }
+  
+  // Пытаемся разбить по пробелам
+  const words = text.split(' ')
+  if (words.length > 1) {
+    const lines = []
+    let currentLine = ''
+    
+    words.forEach(word => {
+      if ((currentLine + ' ' + word).length <= maxLength) {
+        currentLine = currentLine ? currentLine + ' ' + word : word
+      } else {
+        if (currentLine) {
+          lines.push(currentLine)
+        }
+        currentLine = word.length > maxLength ? truncateText(word, maxLength) : word
+      }
+    })
+    
+    if (currentLine) {
+      lines.push(currentLine)
+    }
+    
+    return lines.length > 1 ? lines : text
+  }
+  
+  // Если нет пробелов, просто обрезаем
+  return truncateText(text, maxLength)
+}
+
 export const prepareSpiderChartData = (ratings, spheres = null) => {
   // Если передан список сфер из API, используем его, иначе используем константы
   const allSphereKeys = spheres ? spheres.map(s => s.key) : SPHERE_KEYS
@@ -26,7 +78,12 @@ export const prepareSpiderChartData = (ratings, spheres = null) => {
     return true
   })
   
-  const labels = sphereKeys.map(key => sphereNames[key] || key)
+  // Форматируем метки: обрезаем длинные названия или разбиваем на строки
+  const labels = sphereKeys.map(key => {
+    const name = sphereNames[key] || key
+    return wrapText(name, 10)
+  })
+  
   const data = sphereKeys.map(key => {
     const value = ratings[key]
     console.log(`Сфера ${key} (${sphereNames[key] || key}): rating = ${value}`)
@@ -74,7 +131,12 @@ export const prepareSpiderChartDataComparison = (initialRatings, currentRatings,
     return true
   })
   
-  const labels = sphereKeys.map(key => sphereNames[key] || key)
+  // Форматируем метки: обрезаем длинные названия или разбиваем на строки
+  const labels = sphereKeys.map(key => {
+    const name = sphereNames[key] || key
+    return wrapText(name, 10)
+  })
+  
   const initialData = sphereKeys.map(key => {
     const value = initialRatings[key]
     return value !== undefined && value !== null ? value : 0
@@ -135,10 +197,11 @@ export const getSpiderChartOptions = (isDarkTheme = false, showLegend = false) =
         },
         pointLabels: {
           font: {
-            size: 14,
+            size: 12,
             family: "'Roboto', sans-serif"
           },
-          color: textColor
+          color: textColor,
+          padding: 12
         },
         grid: {
           color: gridColor

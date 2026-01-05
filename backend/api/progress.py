@@ -9,11 +9,10 @@ router = APIRouter(prefix="/api/progress", tags=["progress"])
 
 @router.get("/")
 async def get_progress(
-    days: int = 7,
     user = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    progress = await calculate_progress(db, user.id, days=days)
+    progress = await calculate_progress(db, user.id)
     return progress
 
 

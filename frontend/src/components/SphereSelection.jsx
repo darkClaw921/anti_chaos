@@ -4,6 +4,7 @@ import Button from './Button'
 import { initTelegramWebApp, setBackButton, hideBackButton } from '../services/telegram'
 import { api } from '../services/api'
 import { SPHERES, SPHERE_KEYS } from '../utils/constants'
+import { useSubscription } from '../utils/useSubscription'
 import '../styles/main.css'
 import '../styles/components.css'
 
@@ -13,6 +14,7 @@ const SphereSelection = () => {
   const [ratings, setRatings] = useState({})
   const [spheres, setSpheres] = useState([])
   const [loading, setLoading] = useState(false)
+  const { hasPaidPlan } = useSubscription()
 
   useEffect(() => {
     initTelegramWebApp()
@@ -78,9 +80,10 @@ const SphereSelection = () => {
   }
 
   const handleSphereClick = (sphere) => {
-    // Блокируем выбор платных сфер
+    // Если сфера платная и у пользователя нет платной подписки, перекидываем на страницу подписок
     const sphereData = spheres.find(s => s.key === sphere)
-    if (sphereData && sphereData.name.includes('(платно)')) {
+    if (sphereData && sphereData.name.includes('(платно)') && !hasPaidPlan) {
+      navigate('/subscription', { state: { from: 'onboarding', returnPath: '/selection' } })
       return
     }
     
@@ -129,17 +132,18 @@ const SphereSelection = () => {
             const isSelected = selectedSpheres.includes(sphere.key)
             const rating = ratings[sphere.key]
             const isPaid = sphere.name.includes('(платно)')
+            const isLocked = isPaid && !hasPaidPlan
             
             return (
               <div
                 key={sphere.key}
-                className={`sphere-card ${isSelected ? 'selected' : ''} ${isPaid ? 'locked' : ''}`}
+                className={`sphere-card ${isSelected ? 'selected' : ''} ${isLocked ? 'locked' : ''}`}
                 onClick={() => handleSphereClick(sphere.key)}
               >
                 {rating && (
                   <span className="sphere-rating">{rating}/10</span>
                 )}
-                {isPaid && (
+                {isLocked && (
                   <span style={{ 
                     position: 'absolute', 
                     top: '10px', 

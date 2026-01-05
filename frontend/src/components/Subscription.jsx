@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import Button from './Button'
 import { initTelegramWebApp, setBackButton, hideBackButton } from '../services/telegram'
+import { api } from '../services/api'
 import { useTheme } from '../utils/useTheme'
 import '../styles/main.css'
 import '../styles/components.css'
@@ -13,13 +14,19 @@ const Subscription = () => {
   const [currentTariffIndex, setCurrentTariffIndex] = useState(0)
   const [touchStart, setTouchStart] = useState(null)
   const [touchEnd, setTouchEnd] = useState(null)
+  const [loading, setLoading] = useState(false)
   const scrollContainerRef = React.useRef(null)
   const isDark = useTheme()
 
   useEffect(() => {
     initTelegramWebApp()
-    // Если пришли с экрана пресейла, кнопка назад ведет туда, иначе на monthly
-    const backPath = location.state?.from === 'presale' ? '/improvement-plan-presale' : '/monthly'
+    // Определяем путь возврата в зависимости от источника
+    let backPath = '/monthly'
+    if (location.state?.from === 'presale') {
+      backPath = '/improvement-plan-presale'
+    } else if (location.state?.from === 'onboarding' && location.state?.returnPath) {
+      backPath = location.state.returnPath
+    }
     setBackButton(() => navigate(backPath))
     
     return () => {
@@ -68,11 +75,48 @@ const Subscription = () => {
     }
   }
 
-  const handleSelect = () => {
-    if (selectedTariff) {
-      // Здесь будет логика выбора тарифа и оплаты
-      // После успешной оплаты переходим на экран подтверждения
-      navigate('/subscription-success')
+  const handleSelect = async () => {
+    if (!selectedTariff) {
+      return
+    }
+    
+    setLoading(true)
+    try {
+      // Вычисляем дату истечения подписки
+      let expiresAt = null
+      const now = new Date()
+      
+      if (selectedTariff === 'pro') {
+        // PRO план: добавляем 1 месяц
+        expiresAt = new Date(now.getFullYear(), now.getMonth() + 1, now.getDate())
+      } else if (selectedTariff === 'consultation') {
+        // Консультация: добавляем 1 год (или можно не устанавливать срок)
+        expiresAt = new Date(now.getFullYear() + 1, now.getMonth(), now.getDate())
+      } else if (selectedTariff === 'free') {
+        // FREE план: добавляем 2 месяца
+        expiresAt = new Date(now.getFullYear(), now.getMonth() + 2, now.getDate())
+      }
+      
+      // Обновляем подписку в базе данных
+      await api.updateSubscription(
+        selectedTariff,
+        expiresAt ? expiresAt.toISOString() : null
+      )
+      
+      // После успешного обновления переходим на экран подтверждения
+      // Передаем информацию о подписке для обновления состояния
+      navigate('/subscription-success', { 
+        state: { 
+          plan: selectedTariff,
+          from: location.state?.from,
+          returnPath: location.state?.returnPath
+        } 
+      })
+    } catch (error) {
+      console.error('Ошибка при обновлении подписки:', error)
+      alert('Ошибка при обновлении подписки: ' + (error.message || 'Неизвестная ошибка'))
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -338,9 +382,13 @@ const Subscription = () => {
       <div className="btn-group" style={{ marginTop: 'auto', paddingTop: '24px' }}>
         <Button 
           onClick={() => {
-            const backPath = location.state?.from === 'presale' 
-              ? '/improvement-plan-presale' 
-              : '/monthly'
+            // Определяем путь возврата в зависимости от источника
+            let backPath = '/monthly'
+            if (location.state?.from === 'presale') {
+              backPath = '/improvement-plan-presale'
+            } else if (location.state?.from === 'onboarding' && location.state?.returnPath) {
+              backPath = location.state.returnPath
+            }
             navigate(backPath)
           }} 
           type="secondary" 
@@ -352,9 +400,9 @@ const Subscription = () => {
           onClick={handleSelect} 
           type="primary" 
           style={{ width: '100%' }}
-          disabled={!selectedTariff}
+          disabled={!selectedTariff || loading}
         >
-          Выбрать
+          {loading ? 'Обработка...' : 'Выбрать'}
         </Button>
       </div>
     </div>

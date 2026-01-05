@@ -38,12 +38,35 @@ const Progress = () => {
 
   const loadProgress = async () => {
     try {
-      const data = await api.getProgress(7)
+      const data = await api.getProgress()
       setProgress(data)
     } catch (error) {
       console.error('Ошибка загрузки прогресса:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const getPeriodText = () => {
+    if (!progress || !progress.period_days) {
+      return 'Твоя динамика'
+    }
+    
+    const days = progress.period_days
+    if (days === 1) {
+      return 'Твоя динамика за 1 день'
+    } else if (days < 7) {
+      return `Твоя динамика за ${days} дня`
+    } else if (days < 30) {
+      return `Твоя динамика за ${days} дней`
+    } else {
+      const months = Math.floor(days / 30)
+      const remainingDays = days % 30
+      if (remainingDays === 0) {
+        return `Твоя динамика за ${months} ${months === 1 ? 'месяц' : months < 5 ? 'месяца' : 'месяцев'}`
+      } else {
+        return `Твоя динамика за ${months} ${months === 1 ? 'месяц' : months < 5 ? 'месяца' : 'месяцев'} и ${remainingDays} ${remainingDays === 1 ? 'день' : remainingDays < 5 ? 'дня' : 'дней'}`
+      }
     }
   }
 
@@ -62,7 +85,7 @@ const Progress = () => {
   return (
     <div className="container">
       <div className="content">
-        <h2 className="text-title">Твоя динамика за последние 7 дней</h2>
+        <h2 className="text-title">{getPeriodText()}</h2>
         
         {chartData && (
           <div className="spider-chart-container" style={{ marginTop: '36px' }}>

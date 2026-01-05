@@ -126,6 +126,33 @@ async def get_latest_user_spheres(db: AsyncSession, user_id: int) -> List[UserSp
     return list(spheres_dict.values())
 
 
+async def get_previous_user_spheres(db: AsyncSession, user_id: int) -> List[UserSphere]:
+    """
+    Получает предыдущие оценки по каждой сфере (перед последними)
+    """
+    result = await db.execute(
+        select(UserSphere)
+        .where(UserSphere.user_id == user_id)
+        .order_by(UserSphere.date.desc(), UserSphere.id.desc())
+    )
+    all_spheres = list(result.scalars().all())
+    
+    if not all_spheres:
+        return []
+    
+    # Группируем по сферам и берем последнюю и предыдущую оценку для каждой сферы
+    latest_dict = {}
+    previous_dict = {}
+    
+    for sphere in all_spheres:
+        if sphere.sphere not in latest_dict:
+            latest_dict[sphere.sphere] = sphere
+        elif sphere.sphere not in previous_dict:
+            previous_dict[sphere.sphere] = sphere
+    
+    return list(previous_dict.values())
+
+
 # Question CRUD
 async def get_question_by_id(db: AsyncSession, question_id: int) -> Optional[Question]:
     result = await db.execute(select(Question).where(Question.id == question_id))

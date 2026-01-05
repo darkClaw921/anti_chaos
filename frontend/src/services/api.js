@@ -152,6 +152,13 @@ export const api = {
     return handleResponse(response)
   },
   
+  getOnboardingStep: async () => {
+    const response = await fetch(buildApiUrl('api/users/onboarding-step'), {
+      headers: getHeaders()
+    })
+    return handleResponse(response)
+  },
+  
   updateProfile: async (profileData) => {
     const response = await fetch(buildApiUrl('api/users/me/profile'), {
       method: 'PUT',
@@ -180,6 +187,26 @@ export const api = {
     const response = await fetch(buildApiUrl('api/users/me/generate-test-data'), {
       method: 'POST',
       headers: getHeaders()
+    })
+    return handleResponse(response)
+  },
+  
+  getSubscription: async () => {
+    const response = await fetch(buildApiUrl('api/users/me/subscription'), {
+      headers: getHeaders()
+    })
+    return handleResponse(response)
+  },
+  
+  updateSubscription: async (plan, expiresAt = null) => {
+    const body = { plan }
+    if (expiresAt) {
+      body.expires_at = expiresAt
+    }
+    const response = await fetch(buildApiUrl('api/users/me/subscription'), {
+      method: 'PUT',
+      headers: getHeaders(),
+      body: JSON.stringify(body)
     })
     return handleResponse(response)
   },
@@ -304,8 +331,8 @@ export const api = {
   },
   
   // Progress
-  getProgress: async (days = 7) => {
-    const response = await fetch(buildApiUrl(`api/progress/?days=${days}`), {
+  getProgress: async () => {
+    const response = await fetch(buildApiUrl('api/progress/'), {
       headers: getHeaders()
     })
     return handleResponse(response)

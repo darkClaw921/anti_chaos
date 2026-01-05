@@ -4,6 +4,7 @@ import Button from './Button'
 import { initTelegramWebApp, setBackButton, hideBackButton } from '../services/telegram'
 import { api } from '../services/api'
 import { SPHERES, SPHERE_KEYS, RATING_SCALE } from '../utils/constants'
+import { useSubscription } from '../utils/useSubscription'
 import '../styles/main.css'
 import '../styles/components.css'
 
@@ -12,6 +13,7 @@ const SphereRating = () => {
   const [ratings, setRatings] = useState({})
   const [spheres, setSpheres] = useState([])
   const [loading, setLoading] = useState(false)
+  const { hasPaidPlan } = useSubscription()
 
   useEffect(() => {
     initTelegramWebApp()
@@ -51,8 +53,9 @@ const SphereRating = () => {
   }
 
   const handleRatingClick = (sphere, rating, isPaid) => {
-    // Блокируем оценку платных сфер
-    if (isPaid) {
+    // Если сфера платная и у пользователя нет платной подписки, перекидываем на страницу подписок
+    if (isPaid && !hasPaidPlan) {
+      navigate('/subscription', { state: { from: 'onboarding', returnPath: '/rating' } })
       return
     }
     
@@ -65,10 +68,20 @@ const SphereRating = () => {
   const handleContinue = async () => {
     // Проверяем, что все обычные (не платные) сферы оценены
     const sphereKeys = spheres.length > 0 ? spheres.map(s => s.key) : SPHERE_KEYS
-    // Фильтруем платные сферы из проверки
+    // Фильтруем платные сферы из проверки (если нет платной подписки)
     const regularSpheres = sphereKeys.filter(key => {
       const sphere = spheres.find(s => s.key === key) || { key, name: SPHERES[key] || '' }
-      return !sphere.name.includes('(платно)')
+      const isPaid = sphere.name.includes('(платно)')
+      // Если сфера платная и есть платная подписка, включаем её в проверку
+      if (isPaid && hasPaidPlan) {
+        return true
+      }
+      // Если сфера платная и нет платной подписки, исключаем из проверки
+      if (isPaid && !hasPaidPlan) {
+        return false
+      }
+      // Обычные сферы всегда включаем
+      return true
     })
     const allRated = regularSpheres.every(sphere => ratings[sphere] !== undefined)
     
@@ -103,19 +116,30 @@ const SphereRating = () => {
             const sphereKey = typeof sphere === 'string' ? sphere : sphere.key
             const sphereName = typeof sphere === 'string' ? SPHERES[sphere] : sphere.name
             const isPaid = sphereName.includes('(платно)')
+            const isLocked = isPaid && !hasPaidPlan
             return (
               <div key={sphereKey} style={{ marginBottom: '20px', position: 'relative' }}>
-                <div style={{ marginBottom: '12px', fontSize: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div 
+                  style={{ 
+                    marginBottom: '12px', 
+                    fontSize: '16px', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: '8px',
+                    cursor: isLocked ? 'pointer' : 'default'
+                  }}
+                  onClick={() => isLocked && navigate('/subscription', { state: { from: 'onboarding', returnPath: '/rating' } })}
+                >
                   {sphereName}
-                  {isPaid && <span style={{ fontSize: '16px' }}>🔒</span>}
+                  {isLocked && <span style={{ fontSize: '16px' }}>🔒</span>}
                 </div>
                 <div className="rating-group">
                   {RATING_SCALE.map(rating => (
                     <button
                       key={rating}
-                      className={`rating-button ${ratings[sphereKey] === rating ? 'active' : ''} ${isPaid ? 'disabled' : ''}`}
+                      className={`rating-button ${ratings[sphereKey] === rating ? 'active' : ''} ${isLocked ? 'disabled' : ''}`}
                       onClick={() => handleRatingClick(sphereKey, rating, isPaid)}
-                      disabled={isPaid}
+                      disabled={isLocked}
                     >
                       {rating}
                     </button>
